@@ -1337,16 +1337,11 @@ class clientGpro(Client):
     
     def _train_fedavg(self):
         """
-        FedAvg with Ditto-style personalization
+        FedAvg: Standard training on mixed data
         
-        Training flow (matching Ditto exactly):
-        1. Train personalized model (ptrain) - local adaptation
-        2. Train global model (train) - federated learning
+        Note: ptrain() is already called by server before this method.
+        This method only trains the global model.
         """
-        # Step 1: Train personalized model first (Ditto's ptrain)
-        self.ptrain()
-        
-        # Step 2: Train global model (Ditto's train)
         mixed_trainloader = self._create_mixed_dataloader(self.load_train_data())
         self.model.train()
         
