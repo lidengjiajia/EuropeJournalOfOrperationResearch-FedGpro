@@ -1,0 +1,68 @@
+================================================================================
+中心化训练结果汇总 - Uci - HighLR
+================================================================================
+
+重复次数: 5/5
+
+--------------------------------------------------------------------------------
+指标统计 (平均值 ± 标准差)
+--------------------------------------------------------------------------------
+
+Best Test Accuracy       : 0.8129 ± 0.0003
+Final Test Accuracy      : 0.8090 ± 0.0027
+Final Test Precision     : 0.6831 ± 0.0143
+Final Test Recall        : 0.5267 ± 0.0326
+Final Test F1 Score      : 0.5939 ± 0.0173
+Final Train Loss         : 0.457623 ± 0.001080
+Best Epoch               : 49.2 ± 20.6
+
+--------------------------------------------------------------------------------
+各次实验详细结果
+--------------------------------------------------------------------------------
+
+实验 0:
+  Best Test Accuracy       : 0.8131
+  Final Test Accuracy      : 0.8115
+  Final Test Precision     : 0.6751
+  Final Test Recall        : 0.5600
+  Final Test F1 Score      : 0.6122
+  Final Train Loss         : 0.456492
+  Best Epoch               : 45
+
+实验 1:
+  Best Test Accuracy       : 0.8124
+  Final Test Accuracy      : 0.8111
+  Final Test Precision     : 0.6858
+  Final Test Recall        : 0.5334
+  Final Test F1 Score      : 0.6001
+  Final Train Loss         : 0.456724
+  Best Epoch               : 70
+
+实验 2:
+  Best Test Accuracy       : 0.8129
+  Final Test Accuracy      : 0.8059
+  Final Test Precision     : 0.7026
+  Final Test Recall        : 0.4671
+  Final Test F1 Score      : 0.5612
+  Final Train Loss         : 0.457450
+  Best Epoch               : 13
+
+实验 3:
+  Best Test Accuracy       : 0.8128
+  Final Test Accuracy      : 0.8055
+  Final Test Precision     : 0.6606
+  Final Test Recall        : 0.5509
+  Final Test F1 Score      : 0.6008
+  Final Train Loss         : 0.457921
+  Best Epoch               : 68
+
+实验 4:
+  Best Test Accuracy       : 0.8135
+  Final Test Accuracy      : 0.8111
+  Final Test Precision     : 0.6912
+  Final Test Recall        : 0.5223
+  Final Test F1 Score      : 0.5950
+  Final Train Loss         : 0.459528
+  Best Epoch               : 50
+
+================================================================================

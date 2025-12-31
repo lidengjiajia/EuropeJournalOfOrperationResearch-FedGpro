@@ -1,0 +1,68 @@
+================================================================================
+中心化训练结果汇总 - Xinwang - WideDeep
+================================================================================
+
+重复次数: 5/5
+
+--------------------------------------------------------------------------------
+指标统计 (平均值 ± 标准差)
+--------------------------------------------------------------------------------
+
+Best Test Accuracy       : 0.9669 ± 0.0015
+Final Test Accuracy      : 0.9654 ± 0.0009
+Final Test Precision     : 0.9557 ± 0.0235
+Final Test Recall        : 0.6241 ± 0.0244
+Final Test F1 Score      : 0.7544 ± 0.0112
+Final Train Loss         : 0.102842 ± 0.004240
+Best Epoch               : 93.0 ± 1.9
+
+--------------------------------------------------------------------------------
+各次实验详细结果
+--------------------------------------------------------------------------------
+
+实验 0:
+  Best Test Accuracy       : 0.9676
+  Final Test Accuracy      : 0.9655
+  Final Test Precision     : 0.9871
+  Final Test Recall        : 0.6037
+  Final Test F1 Score      : 0.7492
+  Final Train Loss         : 0.103780
+  Best Epoch               : 95
+
+实验 1:
+  Best Test Accuracy       : 0.9644
+  Final Test Accuracy      : 0.9642
+  Final Test Precision     : 0.9510
+  Final Test Recall        : 0.6115
+  Final Test F1 Score      : 0.7444
+  Final Train Loss         : 0.104532
+  Best Epoch               : 93
+
+实验 2:
+  Best Test Accuracy       : 0.9685
+  Final Test Accuracy      : 0.9662
+  Final Test Precision     : 0.9291
+  Final Test Recall        : 0.6535
+  Final Test F1 Score      : 0.7673
+  Final Train Loss         : 0.100613
+  Best Epoch               : 90
+
+实验 3:
+  Best Test Accuracy       : 0.9660
+  Final Test Accuracy      : 0.9647
+  Final Test Precision     : 0.9785
+  Final Test Recall        : 0.5984
+  Final Test F1 Score      : 0.7427
+  Final Train Loss         : 0.109010
+  Best Epoch               : 95
+
+实验 4:
+  Best Test Accuracy       : 0.9682
+  Final Test Accuracy      : 0.9664
+  Final Test Precision     : 0.9326
+  Final Test Recall        : 0.6535
+  Final Test F1 Score      : 0.7685
+  Final Train Loss         : 0.096274
+  Best Epoch               : 92
+
+================================================================================
