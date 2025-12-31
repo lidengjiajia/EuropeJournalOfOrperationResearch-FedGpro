@@ -801,13 +801,9 @@ class clientGpro(Client):
                     z = torch.randn(candidates_per_class, self.vae.latent_dim).to(self.device)
                 
                 # ✨ 解码到特征空间 (CVAE核心改进：指定类别生成)
-                if self.use_cvae:
-                    # CVAE: 条件解码，指定生成class_id类别的样本
-                    y_cond = torch.full((z.shape[0],), class_id, dtype=torch.long).to(self.device)
-                    features = self.vae.decode(z, y_cond)  # 条件解码
-                else:
-                    # 标准VAE: 无条件解码
-                    features = self.vae.decode(z)
+                # ConditionalCreditVAE总是需要y参数
+                y_cond = torch.full((z.shape[0],), class_id, dtype=torch.long).to(self.device)
+                features = self.vae.decode(z, y_cond)  # 条件解码
                 
                 # ========== 改进2: 质量筛选（基于分类器置信度） ==========
                 # 用分类器预测虚拟数据
@@ -1021,11 +1017,14 @@ class clientGpro(Client):
             model_dtype = next(self.vae.parameters()).dtype
             z = torch.randn(num_samples, self.vae.latent_dim, dtype=model_dtype).to(self.device)
             
+            # 为decode生成类别标签（使用类别0作为默认，或者可以采样多个类别）
+            y_decode = torch.zeros(num_samples, dtype=torch.long).to(self.device)
+            
             # 主VAE解码（包含分类信息）
-            features_main = self.vae.decode(z)
+            features_main = self.vae.decode(z, y_decode)
             
             # 基线VAE解码（仅重建信息）
-            features_baseline = self.vae_baseline.decode(z)
+            features_baseline = self.vae_baseline.decode(z, y_decode)
             
             # 计算逐特征的绝对差异
             diff = (features_main - features_baseline).abs().mean(dim=0)
