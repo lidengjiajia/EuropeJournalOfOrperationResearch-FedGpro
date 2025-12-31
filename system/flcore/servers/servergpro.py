@@ -1041,6 +1041,11 @@ class FedGpro(Server):
         # Initialize algorithm-specific states for ALL clients (100%)
         # 所有客户端都参与Phase 2，因此都需要初始化算法状态
         
+        # ALWAYS initialize personalized models (Ditto-style) for Phase 2
+        print(f"  [Phase 2 Init] Initializing Ditto-style personalized models for all clients...")
+        for client in self.clients:
+            client.init_personalized_model()
+        
         if self.phase2_aggregation == 'moon':
             # MOON: Initialize previous models for contrastive learning
             for client in self.clients:
@@ -1050,9 +1055,8 @@ class FedGpro(Server):
             for client in self.clients:
                 client.init_scaffold_controls()
         elif self.phase2_aggregation == 'ditto':
-            # Ditto: Initialize personalized models
-            for client in self.clients:
-                client.init_personalized_model()
+            # Ditto: Already initialized above
+            pass
         elif self.phase2_aggregation == 'fedgwo':
             # FedGWO: Initialize wolf positions
             self.gwo_alpha_pos = None  # Alpha wolf (best)
