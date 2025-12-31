@@ -28,7 +28,6 @@ import copy
 from collections import defaultdict
 from flcore.clients.clientbase import Client
 from flcore.trainmodel.credit_vae import CreditVAE, create_credit_vae
-from flcore.trainmodel.importance_aware_dp import ImportanceAwareDP
 from sklearn.preprocessing import label_binarize
 from sklearn import metrics
 
@@ -117,28 +116,6 @@ class clientGpro(Client):
         self.epsilon = getattr(args, 'fedgpro_epsilon', None)  # None = disabled
         self.noise_type = getattr(args, 'fedgpro_noise_type', None)  # None, 'laplace', 'gaussian'
         self.delta = getattr(args, 'fedgpro_delta', 1e-5)  # For Gaussian noise
-        
-        # Importance-Aware Adaptive DP parameters
-        self.use_importance_aware_dp = getattr(args, 'fedgpro_use_iadp', False)  # 是否启用IA-ADP
-        self.iadp_alpha = getattr(args, 'fedgpro_iadp_alpha', 0.3)  # α参数 [0.1, 0.5]
-        self.iadp_importance_method = getattr(args, 'fedgpro_iadp_importance_method', 'vae_contrast')  # 重要性计算方法：仅支持vae_contrast
-        self.iadp_importance_momentum = getattr(args, 'fedgpro_iadp_importance_momentum', 0.9)  # 重要性平滑系数
-        self.iadp_privacy_priority = getattr(args, 'fedgpro_iadp_privacy_priority', False)  # 隐私优先 vs 效用优先
-        
-        # 初始化IA-ADP对象（如果启用）
-        self.importance_aware_dp = None
-        if self.use_importance_aware_dp and self.epsilon is not None and self.epsilon > 0:
-            self.importance_aware_dp = ImportanceAwareDP(
-                epsilon=self.epsilon,
-                alpha=self.iadp_alpha,
-                clip_norm=1.0,
-                importance_method=self.iadp_importance_method,
-                importance_momentum=self.iadp_importance_momentum,
-                privacy_priority=self.iadp_privacy_priority,
-                device=self.device
-            )
-            strategy = "Privacy-First" if self.iadp_privacy_priority else "Utility-First"
-            print(f"  Client {self.id}: Importance-Aware Adaptive DP enabled (α={self.iadp_alpha}, method={self.iadp_importance_method}, strategy={strategy})")
         
         # Component switches for ablation study
         self.use_vae_generation = getattr(args, 'fedgpro_use_vae', True)  # Default: enabled
@@ -853,9 +830,15 @@ class clientGpro(Client):
         
         return virtual_data
     
-    def add_noise_to_virtual_data(self):
+    def add_adaptive_noise_to_virtual_data(self, strategy='balanced'):
         """
-        Add differential privacy noise to virtual data (optional)
+        Add adaptive differential privacy noise to virtual data based on feature importance
+        
+        Args:
+            strategy: Noise allocation strategy
+                - 'privacy_first': More noise on important features (protect privacy)
+                - 'utility_first': Less noise on important features (preserve utility)
+                - 'balanced': Uniform noise (traditional DP)
         
         Noise is added ONLY if:
         - epsilon is not None AND epsilon > 0
@@ -879,7 +862,10 @@ class clientGpro(Client):
             print(f"  Client {self.id}: Skipping noise addition (noise_type={self.noise_type})")
             return
         
-        print(f"  Client {self.id}: Adding {self.noise_type} noise (ε={self.epsilon})")
+        print(f"  Client {self.id}: Adding {strategy} {self.noise_type} noise (ε={self.epsilon})")
+        
+        # Get feature importance if available
+        use_adaptive = (self.feature_importance is not None and strategy != 'balanced')
         
         noisy_data = []
         
@@ -887,22 +873,44 @@ class clientGpro(Client):
             features = np.array(features)
             
             # Sensitivity: assume features are normalized to [0, 1] or [-1, 1]
-            # For tabular data, sensitivity ≈ max feature range
             sensitivity = 1.0
             
+            if use_adaptive:
+                # Adaptive noise based on feature importance
+                if strategy == 'privacy_first':
+                    # More noise on important features
+                    noise_scale = self.feature_importance
+                elif strategy == 'utility_first':
+                    # Less noise on important features
+                    noise_scale = 1.0 - self.feature_importance
+                else:
+                    noise_scale = np.ones_like(self.feature_importance)
+                
+                # Normalize to maintain total privacy budget
+                noise_scale = noise_scale / noise_scale.mean()
+            else:
+                # Uniform noise
+                noise_scale = np.ones(features.shape[0])
+            
             if self.noise_type == 'laplace':
-                # Laplace mechanism
-                scale = sensitivity / self.epsilon
-                noise = np.random.laplace(0, scale, size=features.shape)
+                # Laplace mechanism with adaptive scaling
+                base_scale = sensitivity / self.epsilon
+                noise = np.random.laplace(0, base_scale * noise_scale, size=features.shape)
             else:  # gaussian
-                # Gaussian mechanism
-                sigma = sensitivity * np.sqrt(2 * np.log(1.25 / self.delta)) / self.epsilon
-                noise = np.random.normal(0, sigma, size=features.shape)
+                # Gaussian mechanism with adaptive scaling
+                base_sigma = sensitivity * np.sqrt(2 * np.log(1.25 / self.delta)) / self.epsilon
+                noise = np.random.normal(0, base_sigma * noise_scale, size=features.shape)
             
             noisy_features = features + noise
             noisy_data.append((noisy_features, label))
         
         self.virtual_data = noisy_data
+    
+    def add_noise_to_virtual_data(self):
+        """
+        Backward compatibility wrapper - calls add_adaptive_noise_to_virtual_data with balanced strategy
+        """
+        self.add_adaptive_noise_to_virtual_data(strategy='balanced')
     
     def train_baseline_vae(self):
         """
@@ -1046,105 +1054,6 @@ class clientGpro(Client):
         print(f"    Importance range: [{self.feature_importance.min():.3f}, {self.feature_importance.max():.3f}]")
         
         return self.feature_importance
-    
-    def add_importance_aware_noise_to_virtual_data(self):
-        """
-        使用Importance-Aware Adaptive DP为虚拟数据加噪
-        
-        核心改进：
-        1. 基于特征重要性的连续噪声尺度调整（β_i = α + (1-α) × (1 - importance_i)）
-        2. 严格的ε-差分隐私保证
-        3. 自动梯度/权重重要性计算
-        4. 指数移动平均平滑重要性变化
-        
-        与add_adaptive_noise_to_virtual_data的区别：
-        - 旧方法：离散策略（privacy_first/utility_first/balanced），缺乏理论保证
-        - 新方法：连续自适应，数学严格的DP保证，学术认可度高
-        """
-        if len(self.virtual_data) == 0:
-            return
-        
-        # 检查是否启用IA-ADP
-        if not self.use_importance_aware_dp or self.importance_aware_dp is None:
-            print(f"  Client {self.id}: IA-ADP not enabled, skipping noise.")
-            return
-        
-        print(f"  Client {self.id}: Adding Importance-Aware Adaptive DP noise (α={self.iadp_alpha}, ε={self.epsilon})")
-        
-        # 步骤1: 构建虚拟数据的参数字典
-        # 将虚拟数据转换为torch tensor以便计算重要性
-        virtual_features = torch.tensor(
-            np.array([feat for feat, _ in self.virtual_data]),
-            dtype=torch.float32,
-            device=self.device
-        )
-        
-        # 步骤2: 计算虚拟数据的梯度（用于重要性计算）
-        # 使用分类器对虚拟数据计算梯度
-        self.model.eval()
-        virtual_labels = torch.tensor(
-            [label for _, label in self.virtual_data],
-            dtype=torch.long,
-            device=self.device
-        )
-        
-        # 启用梯度计算
-        virtual_features.requires_grad = True
-        outputs = self.model(virtual_features.double())
-        loss = F.cross_entropy(outputs, virtual_labels)
-        loss.backward()
-        
-        # 步骤3: 构建参数和梯度字典（按特征维度）
-        parameters = {}
-        gradients = {}
-        for i in range(virtual_features.shape[1]):
-            parameters[f'feature_{i}'] = virtual_features[:, i].detach()
-            if virtual_features.grad is not None:
-                gradients[f'feature_{i}'] = virtual_features.grad[:, i].detach()
-        
-        # 步骤4: 计算VAE对比重要性分数
-        if self.feature_importance is None:
-            print(f"  Client {self.id}: Computing feature importance...")
-            self.compute_feature_importance()
-        
-        # 构建VAE对比重要性字典
-        vae_contrast_scores = {}
-        for i in range(len(self.feature_importance)):
-            vae_contrast_scores[f'feature_{i}'] = torch.tensor(
-                self.feature_importance[i],
-                device=self.device,
-                dtype=torch.float64
-            )
-        
-        # 步骤5: 更新重要性分数（使用VAE对比分数）
-        importance_scores = self.importance_aware_dp.update_importance(
-            parameters,
-            vae_contrast_scores=vae_contrast_scores
-        )
-        
-        # 步骤5: 添加自适应噪声
-        noisy_parameters = self.importance_aware_dp.add_adaptive_noise(
-            parameters, 
-            importance_scores
-        )
-        
-        # 步骤6: 将加噪后的特征重新组装回虚拟数据
-        noisy_data = []
-        for sample_idx in range(len(self.virtual_data)):
-            _, label = self.virtual_data[sample_idx]
-            noisy_features = np.array([
-                noisy_parameters[f'feature_{i}'][sample_idx].cpu().numpy()
-                for i in range(virtual_features.shape[1])
-            ])
-            noisy_data.append((noisy_features, label))
-        
-        self.virtual_data = noisy_data
-        
-        # 输出统计信息
-        dp_info = self.importance_aware_dp.get_info()
-        print(f"  Client {self.id}: IA-ADP noise added successfully.")
-        print(f"    Privacy budget: ε={dp_info['privacy_budget']:.2f}, Avg noise: {dp_info['avg_noise']:.4f}")
-        print(f"    Importance method: {dp_info['importance_method']}, Rounds: {dp_info['num_rounds']}")
     
     def get_phase1_upload(self):
         """
