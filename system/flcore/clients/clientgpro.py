@@ -925,12 +925,18 @@ class clientGpro(Client):
         
         # 创建基线VAE（如果不存在）
         if self.vae_baseline is None:
-            # 获取主VAE的配置
-            input_dim = self.vae.encoder[0].in_features
+            # 从数据获取实际特征维度（不是从encoder第一层，因为那里是input_dim + class_embedding_dim）
+            trainloader_temp = self.load_train_data()
+            sample_x, _ = next(iter(trainloader_temp))
+            if type(sample_x) == type([]):
+                actual_input_dim = sample_x[0].shape[1]
+            else:
+                actual_input_dim = sample_x.shape[1]
+            
             latent_dim = self.vae.latent_dim
             
             self.vae_baseline = create_credit_vae(
-                input_dim=input_dim,
+                input_dim=actual_input_dim,
                 latent_dim=latent_dim,
                 dataset_name=self.dataset
             ).to(self.device).double()

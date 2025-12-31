@@ -1,2 +1,1752 @@
-Traceback (most recent call last):
-  File "C:\Users\��Ǽ�\Documents\����\С����\���˳�\DecisionSupportSystem\system\main.py", line 11, in <module>
+==================================================
+goal = feature
+device = cuda
+device_id = 0
+dataset = Uci
+num_classes = 10
+model = credit
+batch_size = 64
+local_learning_rate = 0.005
+learning_rate_decay = False
+learning_rate_decay_gamma = 0.99
+global_rounds = 100
+top_cnt = 100
+local_epochs = 5
+algorithm = FedGpro
+join_ratio = 1.0
+random_join_ratio = False
+num_clients = 10
+prev = 0
+times = 5
+eval_gap = 1
+save_folder_name = system/models/Uci_FedGpro_feature
+auto_break = False
+dlg_eval = False
+dlg_gap = 100
+batch_num_per_client = 2
+num_new_clients = 0
+fine_tuning_epoch_new = 0
+feature_dim = 512
+vocab_size = 80
+max_len = 200
+few_shot = 0
+client_drop_rate = 0.0
+train_slow_rate = 0.0
+send_slow_rate = 0.0
+time_select = False
+time_threthold = 10000
+beta = 0.0
+lamda = 1.0
+mu = 0.2
+K = 5
+p_learning_rate = 0.01
+M = 5
+itk = 4000
+alphaK = 1.0
+sigma = 1.0
+alpha = 1.0
+plocal_epochs = 3
+tau = 1.0
+fine_tuning_epochs = 10
+dr_learning_rate = 0.0
+L = 1.0
+noise_dim = 512
+generator_learning_rate = 0.005
+hidden_dim = 512
+server_epochs = 1000
+localize_feature_extractor = False
+server_learning_rate = 1.0
+eta = 1.0
+rand_percent = 80
+layer_idx = 2
+mentee_learning_rate = 0.005
+T_start = 0.95
+T_end = 0.98
+momentum = 0.1
+kl_weight = 0.0
+first_stage_bound = 0
+fedcross_alpha = 0.99
+collaberative_model_select_strategy = 1
+fedgpro_phase = 1
+fedgpro_use_vae = True
+fedgpro_use_prototype = True
+fedgpro_epsilon = None
+fedgpro_noise_type = None
+fedgpro_delta = 1e-05
+fedgpro_adaptive_noise = False
+fedgpro_adaptive_strategy = balanced
+fedgpro_utility_weight = 1.0
+fedgpro_use_iadp = False
+fedgpro_iadp_alpha = 0.3
+fedgpro_iadp_importance_method = vae_contrast
+fedgpro_iadp_importance_momentum = 0.9
+fedgpro_iadp_privacy_priority = False
+fedgpro_lambda_cls = 10.0
+fedgpro_lambda_recon = 1.0
+fedgpro_lambda_kl = 0.1
+fedgpro_lambda_proto = 0.1
+fedgpro_proto_momentum = 0.95
+fedgpro_latent_dim = None
+fedgpro_vae_lr = 0.001
+fedgpro_proto_align_lr = 0.001
+fedgpro_threshold_min = 0.6
+fedgpro_phase_transition_threshold = 0.7
+fedgpro_phase2_agg = ditto
+fedgpro_phase2_rounds = 50
+reserved_clients = []
+gwo_alpha_decay = 0.015
+pso_w_max = 0.9
+pso_w_min = 0.4
+pso_c1 = 2.0
+pso_c2 = 2.0
+pso_v_max = 0.5
+cs_f_max = 2.0
+cs_f_min = 0.1
+cs_AP_max = 0.3
+cs_AP_min = 0.1
+==================================================
+
+============= Running time: 0th =============
+Creating server and clients ...
+Warning: Credit dataset Uci should have 2 classes. Auto-correcting from 10 to 2.
+Auto-selected UciCreditNet for dataset Uci
+UciCreditNet(
+  (layers): Sequential(
+    (0): Linear(in_features=23, out_features=32, bias=True)
+    (1): BatchNorm1d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU()
+    (3): Dropout(p=0.4, inplace=False)
+    (4): Linear(in_features=32, out_features=16, bias=True)
+    (5): BatchNorm1d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (6): ReLU()
+    (7): Dropout(p=0.2, inplace=False)
+  )
+  (fc): Linear(in_features=16, out_features=2, bias=True)
+)
+Warning: 'ditto' not supported. Using 'fedavg'.
+  Client 0: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 1: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 2: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 3: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 4: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 5: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 6: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 7: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 8: Personalization enabled (mu=0.2, plocal_epochs=3)
+  Client 9: Personalization enabled (mu=0.2, plocal_epochs=3)
+
+============================================================
+FedGpro: Federated Global Prototype Learning
+============================================================
+Join ratio / total clients: 1.0 / 10
+
+Phase 1 Parameters (Max 20 rounds):
+  Minimum threshold: 0.6
+  Threshold formula:
+    ACC(t-1) = (best_acc(t-1) + avg_acc(t-1)) / 2
+    threshold(r) = ACC(t-1),                                       if r <= 9
+    threshold(r) = max(0.66, ACC(t-1)*(1-0.05*floor((r-10)/5))), if r >= 10
+  Training stages:
+    - Round 1-10: Forced training (no early stop check, ensure VAE quality)
+    - Round 11+: Early stop check + dynamic threshold with time decay
+  Phase transition: 70% clients qualified OR 25 rounds reached
+
+Phase 2 Parameters:
+  Aggregation: fedavg
+  Supported algorithms: fedavg, fedprox, fedscaffold
+============================================================
+
+Finished creating server and clients.
+
+[Phase 1] Statistical Collection (Round 0)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.6600
+  Best client accuracy (ACC(t)): 0.8413
+  Global average accuracy (ACC(t)): 0.7185
+  Client 9 meets threshold! Generating virtual data...
+  Client 9: Privacy disabled, skipping baseline VAE training.
+  Client 9: Collecting latent distribution from real data...
+    [OK] Class 0: 1125个高质量样本达标 (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.858)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 9: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 9: No noise added (privacy disabled).
+  Client 4 meets threshold! Generating virtual data...
+  Client 4: Privacy disabled, skipping baseline VAE training.
+  Client 4: Collecting latent distribution from real data...
+    [OK] Class 0: 1125个高质量样本达标 (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.870)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 4: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 4: No noise added (privacy disabled).
+  Client 1 meets threshold! Generating virtual data...
+  Client 1: Privacy disabled, skipping baseline VAE training.
+  Client 1: Collecting latent distribution from real data...
+    [OK] Class 0: 1125个高质量样本达标 (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.850)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 1: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 1: No noise added (privacy disabled).
+  Client 0 meets threshold! Generating virtual data...
+  Client 0: Privacy disabled, skipping baseline VAE training.
+  Client 0: Collecting latent distribution from real data...
+    [OK] Class 0: 1125个高质量样本达标 (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.826)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 0: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 0: No noise added (privacy disabled).
+  Client 3 meets threshold! Generating virtual data...
+  Client 3: Privacy disabled, skipping baseline VAE training.
+  Client 3: Collecting latent distribution from real data...
+    [WARNING] Class 0: 仅116/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 0: 116/2250 candidates passed filter (avg confidence: 0.807)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 3: Generated 116/2250 high-quality samples (5.2% pass rate, strict threshold=0.80)
+  Client 3: No noise added (privacy disabled).
+  Client 6 meets threshold! Generating virtual data...
+  Client 6: Privacy disabled, skipping baseline VAE training.
+  Client 6: Collecting latent distribution from real data...
+    [OK] Class 0: 1125个高质量样本达标 (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.856)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 6: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 6: No noise added (privacy disabled).
+  Client 8 meets threshold! Generating virtual data...
+  Client 8: Privacy disabled, skipping baseline VAE training.
+  Client 8: Collecting latent distribution from real data...
+    [WARNING] Class 0: 仅778/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 0: 778/2250 candidates passed filter (avg confidence: 0.814)
+    [WARNING] Class 1: 仅0/1125样本达标 (threshold=0.80), 宁缺毋滥，不补充低质量数据
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 8: Generated 778/2250 high-quality samples (34.6% pass rate, strict threshold=0.80)
+  Client 8: No noise added (privacy disabled).
+  Newly qualified clients: [9, 4, 1, 0, 3, 6, 8]
+  Total qualified clients: 7/10
+  Virtual data pool size: 6519
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+
+  [Prototype Aggregation] 权重分解详情 (Round 0):
+  ================================================================================
+  客户端      数据量        衰减α_k        组合权重           归一化权重          状态        
+  --------------------------------------------------------------------------------
+  Client 0   2250        1.0000        2250.00         0.1000          活跃        
+  Client 1   2250        1.0000        2250.00         0.1000          活跃        
+  Client 2   2250        1.0000        2250.00         0.1000          活跃        
+  Client 3   2250        1.0000        2250.00         0.1000          活跃        
+  Client 4   2250        1.0000        2250.00         0.1000          活跃        
+  Client 5   2250        1.0000        2250.00         0.1000          活跃        
+  Client 6   2250        1.0000        2250.00         0.1000          活跃        
+  Client 7   2250        1.0000        2250.00         0.1000          活跃        
+  Client 8   2250        1.0000        2250.00         0.1000          活跃        
+  Client 9   2250        1.0000        2250.00         0.1000          活跃        
+  --------------------------------------------------------------------------------
+  总组合权重: 22500.00
+  归一化检查: Σw_k_norm = 1.000000 (应为1.0)
+  ================================================================================
+
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 1: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 0 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5778
+Averaged Test Accuracy: 0.7185
+Averaged Test AUC: 0.4962
+Averaged Test Precision: 0.6214
+Averaged Test Recall: 0.7185
+Averaged Test F1-Score: 0.6424
+Std Test Accuracy: 0.1219
+Std Test AUC: 0.0418
+------------------------------------------------------------
+Round 0 time cost: 16.16s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 1)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7799
+  Best client accuracy (ACC(t)): 0.8427
+  Global average accuracy (ACC(t)): 0.7200
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 2: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 1 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5675
+Averaged Test Accuracy: 0.7200
+Averaged Test AUC: 0.4954
+Averaged Test Precision: 0.6146
+Averaged Test Recall: 0.7200
+Averaged Test F1-Score: 0.6452
+Std Test Accuracy: 0.1198
+Std Test AUC: 0.0501
+------------------------------------------------------------
+Round 1 time cost: 14.26s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 2)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7813
+  Best client accuracy (ACC(t)): 0.8440
+  Global average accuracy (ACC(t)): 0.7068
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 3: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 2 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.6347
+Averaged Test Accuracy: 0.7068
+Averaged Test AUC: 0.5059
+Averaged Test Precision: 0.6562
+Averaged Test Recall: 0.7068
+Averaged Test F1-Score: 0.6633
+Std Test Accuracy: 0.1173
+Std Test AUC: 0.0539
+------------------------------------------------------------
+Round 2 time cost: 13.97s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 3)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7754
+  Best client accuracy (ACC(t)): 0.8280
+  Global average accuracy (ACC(t)): 0.6923
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 4: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 3 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.7577
+Averaged Test Accuracy: 0.6923
+Averaged Test AUC: 0.5104
+Averaged Test Precision: 0.6508
+Averaged Test Recall: 0.6923
+Averaged Test F1-Score: 0.6615
+Std Test Accuracy: 0.1044
+Std Test AUC: 0.0579
+------------------------------------------------------------
+Round 3 time cost: 14.38s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 4)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7601
+  Best client accuracy (ACC(t)): 0.8093
+  Global average accuracy (ACC(t)): 0.6912
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 5: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 4 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.8564
+Averaged Test Accuracy: 0.6912
+Averaged Test AUC: 0.5220
+Averaged Test Precision: 0.6603
+Averaged Test Recall: 0.6912
+Averaged Test F1-Score: 0.6667
+Std Test Accuracy: 0.0911
+Std Test AUC: 0.0649
+------------------------------------------------------------
+Round 4 time cost: 13.89s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.7480)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6560)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7227)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 8] 早停检查 (当前准确率: 0.7667)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.6827)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 1] 早停检查 (当前准确率: 0.7773)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6293)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5400)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.5773)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 6] 早停检查 (当前准确率: 0.7973)
+    [-] 条件(1): 训练轮数不足 (6/10轮) - 强制训练
+  Current threshold (based on ACC(t-1)): 0.7503
+  Best client accuracy (ACC(t)): 0.7973
+  Global average accuracy (ACC(t)): 0.6897
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+
+  [Prototype Aggregation] 权重分解详情 (Round 5):
+  ================================================================================
+  客户端      数据量        衰减α_k        组合权重           归一化权重          状态        
+  --------------------------------------------------------------------------------
+  Client 0   2250        1.0000        2250.00         0.1000          活跃        
+  Client 1   2250        1.0000        2250.00         0.1000          活跃        
+  Client 2   2250        1.0000        2250.00         0.1000          活跃        
+  Client 3   2250        1.0000        2250.00         0.1000          活跃        
+  Client 4   2250        1.0000        2250.00         0.1000          活跃        
+  Client 5   2250        1.0000        2250.00         0.1000          活跃        
+  Client 6   2250        1.0000        2250.00         0.1000          活跃        
+  Client 7   2250        1.0000        2250.00         0.1000          活跃        
+  Client 8   2250        1.0000        2250.00         0.1000          活跃        
+  Client 9   2250        1.0000        2250.00         0.1000          活跃        
+  --------------------------------------------------------------------------------
+  总组合权重: 22500.00
+  归一化检查: Σw_k_norm = 1.000000 (应为1.0)
+  ================================================================================
+
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 6: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 5 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.9279
+Averaged Test Accuracy: 0.6897
+Averaged Test AUC: 0.5338
+Averaged Test Precision: 0.6687
+Averaged Test Recall: 0.6897
+Averaged Test F1-Score: 0.6696
+Std Test Accuracy: 0.0834
+Std Test AUC: 0.0721
+------------------------------------------------------------
+Round 5 time cost: 14.06s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 6)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7240)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 1] 早停检查 (当前准确率: 0.7747)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 6] 早停检查 (当前准确率: 0.7960)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6333)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.6373)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 8] 早停检查 (当前准确率: 0.7573)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.7267)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6640)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5280)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.6133)
+    [-] 条件(1): 训练轮数不足 (7/10轮) - 强制训练
+  Current threshold (based on ACC(t-1)): 0.7435
+  Best client accuracy (ACC(t)): 0.7960
+  Global average accuracy (ACC(t)): 0.6855
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 7: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 6 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.9646
+Averaged Test Accuracy: 0.6855
+Averaged Test AUC: 0.5467
+Averaged Test Precision: 0.6693
+Averaged Test Recall: 0.6855
+Averaged Test F1-Score: 0.6687
+Std Test Accuracy: 0.0800
+Std Test AUC: 0.0776
+------------------------------------------------------------
+Round 6 time cost: 14.05s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 7)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 6] 早停检查 (当前准确率: 0.7947)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5267)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.7373)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6400)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7213)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 8] 早停检查 (当前准确率: 0.7600)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6693)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.6053)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.6347)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 1] 早停检查 (当前准确率: 0.7720)
+    [-] 条件(1): 训练轮数不足 (8/10轮) - 强制训练
+  Current threshold (based on ACC(t-1)): 0.7407
+  Best client accuracy (ACC(t)): 0.7947
+  Global average accuracy (ACC(t)): 0.6861
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 8: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 7 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 1.0131
+Averaged Test Accuracy: 0.6861
+Averaged Test AUC: 0.5565
+Averaged Test Precision: 0.6768
+Averaged Test Recall: 0.6861
+Averaged Test F1-Score: 0.6714
+Std Test Accuracy: 0.0809
+Std Test AUC: 0.0793
+------------------------------------------------------------
+Round 7 time cost: 13.91s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 8)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5427)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6507)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.6147)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6760)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 8] 早停检查 (当前准确率: 0.7613)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 1] 早停检查 (当前准确率: 0.7747)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 6] 早停检查 (当前准确率: 0.7907)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7227)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.6813)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.6480)
+    [-] 条件(1): 训练轮数不足 (9/10轮) - 强制训练
+  Current threshold (based on ACC(t-1)): 0.7404
+  Best client accuracy (ACC(t)): 0.7907
+  Global average accuracy (ACC(t)): 0.6863
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 9: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 8 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 1.0133
+Averaged Test Accuracy: 0.6863
+Averaged Test AUC: 0.5673
+Averaged Test Precision: 0.6800
+Averaged Test Recall: 0.6863
+Averaged Test F1-Score: 0.6745
+Std Test Accuracy: 0.0737
+Std Test AUC: 0.0785
+------------------------------------------------------------
+Round 8 time cost: 13.65s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 9)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.6693)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第8轮: 0.6347 < 0.7204 [FAIL]
+       第9轮: 0.6480 < 0.7204 [FAIL]
+       第10轮: 0.6693 < 0.7204 [FAIL]
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7467)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [+] 条件(2): 所有轮次都持续达标
+       容忍阈值: 0.7204
+       第8轮: 0.7213 >= 0.7204 [+]
+       第9轮: 0.7227 >= 0.7204 [+]
+       第10轮: 0.7467 >= 0.7204 [+]
+    [-] 条件(3): 波动率过大 (0.0253 > 0.0200)
+       最近3轮: ['0.7213', '0.7227', '0.7467'] (最大-最小=0.0253)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 1] 早停检查 (当前准确率: 0.7667)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [+] 条件(2): 所有轮次都持续达标
+       容忍阈值: 0.7204
+       第8轮: 0.7720 >= 0.7204 [+]
+       第9轮: 0.7747 >= 0.7204 [+]
+       第10轮: 0.7667 >= 0.7204 [+]
+    [+] 条件(3): 波动率稳定 (0.0080 <= 0.0200)
+       最近3轮: ['0.7720', '0.7747', '0.7667']
+    [OK] 所有条件满足 - 客户端达标！
+  [Qualified] Client 1 reached early stopping criteria (Round 10):
+    - Accuracy: 0.7667 (threshold: 0.7404)
+    - Fluctuation: 0.0080 (last 3 rounds)
+    - History: ['0.772', '0.775', '0.767']
+  [Virtual Data] Generating and locking virtual data for client 1...
+  [Mentor Mode] Client 1 enters mentor mode:
+    - Continue training model (help weak clients)
+    - Continue uploading prototypes (weight auto-decayed by α_k(t))
+    - Virtual data locked (privacy preserved)
+  [Adaptive Decay] Client 1 early stopped at round 9
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 8] 早停检查 (当前准确率: 0.7627)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [+] 条件(2): 所有轮次都持续达标
+       容忍阈值: 0.7204
+       第8轮: 0.7600 >= 0.7204 [+]
+       第9轮: 0.7613 >= 0.7204 [+]
+       第10轮: 0.7627 >= 0.7204 [+]
+    [+] 条件(3): 波动率稳定 (0.0027 <= 0.0200)
+       最近3轮: ['0.7600', '0.7613', '0.7627']
+    [OK] 所有条件满足 - 客户端达标！
+  [Qualified] Client 8 reached early stopping criteria (Round 10):
+    - Accuracy: 0.7627 (threshold: 0.7404)
+    - Fluctuation: 0.0027 (last 3 rounds)
+    - History: ['0.760', '0.761', '0.763']
+  [Virtual Data] Generating and locking virtual data for client 8...
+  [Mentor Mode] Client 8 enters mentor mode:
+    - Continue training model (help weak clients)
+    - Continue uploading prototypes (weight auto-decayed by α_k(t))
+    - Virtual data locked (privacy preserved)
+  [Adaptive Decay] Client 8 early stopped at round 9
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.6000)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第8轮: 0.6053 < 0.7204 [FAIL]
+       第9轮: 0.6147 < 0.7204 [FAIL]
+       第10轮: 0.6000 < 0.7204 [FAIL]
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.6720)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第9轮: 0.6813 < 0.7204 [FAIL]
+       第10轮: 0.6720 < 0.7204 [FAIL]
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6560)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第8轮: 0.6400 < 0.7204 [FAIL]
+       第9轮: 0.6507 < 0.7204 [FAIL]
+       第10轮: 0.6560 < 0.7204 [FAIL]
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5373)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第8轮: 0.5267 < 0.7204 [FAIL]
+       第9轮: 0.5427 < 0.7204 [FAIL]
+       第10轮: 0.5373 < 0.7204 [FAIL]
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 6] 早停检查 (当前准确率: 0.7880)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [+] 条件(2): 所有轮次都持续达标
+       容忍阈值: 0.7204
+       第8轮: 0.7947 >= 0.7204 [+]
+       第9轮: 0.7907 >= 0.7204 [+]
+       第10轮: 0.7880 >= 0.7204 [+]
+    [+] 条件(3): 波动率稳定 (0.0067 <= 0.0200)
+       最近3轮: ['0.7947', '0.7907', '0.7880']
+    [OK] 所有条件满足 - 客户端达标！
+  [Qualified] Client 6 reached early stopping criteria (Round 10):
+    - Accuracy: 0.7880 (threshold: 0.7404)
+    - Fluctuation: 0.0067 (last 3 rounds)
+    - History: ['0.795', '0.791', '0.788']
+  [Virtual Data] Generating and locking virtual data for client 6...
+  [Mentor Mode] Client 6 enters mentor mode:
+    - Continue training model (help weak clients)
+    - Continue uploading prototypes (weight auto-decayed by α_k(t))
+    - Virtual data locked (privacy preserved)
+  [Adaptive Decay] Client 6 early stopped at round 9
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6840)
+    [+] 条件(1): 训练轮数充足 (10轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7204 (ACC(t)=0.7404 - 0.02)
+       第8轮: 0.6693 < 0.7204 [FAIL]
+       第9轮: 0.6760 < 0.7204 [FAIL]
+       第10轮: 0.6840 < 0.7204 [FAIL]
+  Current threshold (based on ACC(t-1)): 0.7385
+  Best client accuracy (ACC(t)): 0.7880
+  Global average accuracy (ACC(t)): 0.6883
+  Early-stopped clients: 3/10
+  Active training clients: 7
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+
+  [Prototype Aggregation] 权重分解详情 (Round 9):
+  ================================================================================
+  客户端      数据量        衰减α_k        组合权重           归一化权重          状态        
+  --------------------------------------------------------------------------------
+  Client 0   2250        1.0000        2250.00         0.1000          活跃        
+  Client 1   2250        1.0000        2250.00         0.1000          早停        
+  Client 2   2250        1.0000        2250.00         0.1000          活跃        
+  Client 3   2250        1.0000        2250.00         0.1000          活跃        
+  Client 4   2250        1.0000        2250.00         0.1000          活跃        
+  Client 5   2250        1.0000        2250.00         0.1000          活跃        
+  Client 6   2250        1.0000        2250.00         0.1000          早停        
+  Client 7   2250        1.0000        2250.00         0.1000          活跃        
+  Client 8   2250        1.0000        2250.00         0.1000          早停        
+  Client 9   2250        1.0000        2250.00         0.1000          活跃        
+  --------------------------------------------------------------------------------
+  总组合权重: 22500.00
+  归一化检查: Σw_k_norm = 1.000000 (应为1.0)
+  ================================================================================
+
+  [Adaptive Decay] Prototype aggregation weights: C1=1.000 C6=1.000 C8=1.000 
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+[Phase Transition Check] Round 10: 前10轮强制Phase 1（共同训练，确保VAE质量）
+
+============================================================
+Round 9 | Phase 1
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 1.0264
+Averaged Test Accuracy: 0.6883
+Averaged Test AUC: 0.5748
+Averaged Test Precision: 0.6882
+Averaged Test Recall: 0.6883
+Averaged Test F1-Score: 0.6783
+Std Test Accuracy: 0.0757
+Std Test AUC: 0.0808
+------------------------------------------------------------
+Round 9 time cost: 13.99s
+------------------------------------------------------------
+
+[Phase 1] Statistical Collection (Round 10)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 0] 早停检查 (当前准确率: 0.6587)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.6813 < 0.7185 [FAIL]
+       第10轮: 0.6720 < 0.7185 [FAIL]
+       第11轮: 0.6587 < 0.7185 [FAIL]
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 3] 早停检查 (当前准确率: 0.6867)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.6760 < 0.7185 [FAIL]
+       第10轮: 0.6840 < 0.7185 [FAIL]
+       第11轮: 0.6867 < 0.7185 [FAIL]
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 7] 早停检查 (当前准确率: 0.6573)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.6507 < 0.7185 [FAIL]
+       第10轮: 0.6560 < 0.7185 [FAIL]
+       第11轮: 0.6573 < 0.7185 [FAIL]
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 9] 早停检查 (当前准确率: 0.7480)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [+] 条件(2): 所有轮次都持续达标
+       容忍阈值: 0.7185
+       第9轮: 0.7227 >= 0.7185 [+]
+       第10轮: 0.7467 >= 0.7185 [+]
+       第11轮: 0.7480 >= 0.7185 [+]
+    [-] 条件(3): 波动率过大 (0.0253 > 0.0200)
+       最近3轮: ['0.7227', '0.7467', '0.7480'] (最大-最小=0.0253)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 2] 早停检查 (当前准确率: 0.6760)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.6480 < 0.7185 [FAIL]
+       第10轮: 0.6693 < 0.7185 [FAIL]
+       第11轮: 0.6760 < 0.7185 [FAIL]
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 5] 早停检查 (当前准确率: 0.5493)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.5427 < 0.7185 [FAIL]
+       第10轮: 0.5373 < 0.7185 [FAIL]
+       第11轮: 0.5493 < 0.7185 [FAIL]
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+
+  [Client 4] 早停检查 (当前准确率: 0.5787)
+    [+] 条件(1): 训练轮数充足 (11轮)
+    [-] 条件(2): 存在低于容忍阈值的轮次
+       容忍阈值: 0.7185 (ACC(t)=0.7385 - 0.02)
+       第9轮: 0.6147 < 0.7185 [FAIL]
+       第10轮: 0.6000 < 0.7185 [FAIL]
+       第11轮: 0.5787 < 0.7185 [FAIL]
+  [Threshold Decay] Round 11: 衰减 0% (第0步)
+    Base: 0.7381 → Decayed: 0.7381 → Final: 0.7381
+  Current threshold (based on ACC(t-1)): 0.7381
+  Best client accuracy (ACC(t)): 0.8000
+  Global average accuracy (ACC(t)): 0.6885
+
+  [Adaptive Decay] 权重衰减计算详情 (Round 11):
+  当前全局准确率: 0.6885
+  衰减强度λ: 0.5
+    Client 1: 第10轮达标
+      达标时准确率: 0.6883
+      准确率提升Δ: +0.0003 → max(0,Δ)=0.0003
+      衰减权重α_k: exp(-0.5×0.0003) = 0.9999
+    Client 8: 第10轮达标
+      达标时准确率: 0.6883
+      准确率提升Δ: +0.0003 → max(0,Δ)=0.0003
+      衰减权重α_k: exp(-0.5×0.0003) = 0.9999
+    Client 6: 第10轮达标
+      达标时准确率: 0.6883
+      准确率提升Δ: +0.0003 → max(0,Δ)=0.0003
+      衰减权重α_k: exp(-0.5×0.0003) = 0.9999
+  Early-stopped clients: 3/10
+  Active training clients: 7
+
+  [VAE Aggregation] 联邦聚合VAE参数...
+  [OK] VAE参数聚合完成，已分发到 10 个客户端
+  参数规模: Encoder=21 layers, Decoder=23 layers
+
+  [Prototype Aggregation] 权重分解详情 (Round 10):
+  ================================================================================
+  客户端      数据量        衰减α_k        组合权重           归一化权重          状态        
+  --------------------------------------------------------------------------------
+  Client 0   2250        1.0000        2250.00         0.1000          活跃        
+  Client 1   2250        0.9999        2249.70         0.1000          早停        
+  Client 2   2250        1.0000        2250.00         0.1000          活跃        
+  Client 3   2250        1.0000        2250.00         0.1000          活跃        
+  Client 4   2250        1.0000        2250.00         0.1000          活跃        
+  Client 5   2250        1.0000        2250.00         0.1000          活跃        
+  Client 6   2250        0.9999        2249.70         0.1000          早停        
+  Client 7   2250        1.0000        2250.00         0.1000          活跃        
+  Client 8   2250        0.9999        2249.70         0.1000          早停        
+  Client 9   2250        1.0000        2250.00         0.1000          活跃        
+  --------------------------------------------------------------------------------
+  总组合权重: 22499.10
+  归一化检查: Σw_k_norm = 1.000000 (应为1.0)
+  ================================================================================
+
+  [Adaptive Decay] Prototype aggregation weights: C1=1.000 C6=1.000 C8=1.000 
+  Client 0 received 2 global prototypes
+  Client 1 received 2 global prototypes
+  Client 2 received 2 global prototypes
+  Client 3 received 2 global prototypes
+  Client 4 received 2 global prototypes
+  Client 5 received 2 global prototypes
+  Client 6 received 2 global prototypes
+  Client 7 received 2 global prototypes
+  Client 8 received 2 global prototypes
+  Client 9 received 2 global prototypes
+
+================================================================================
+[Phase Transition Check] Round 11 (Phase 1: 最多25轮)
+================================================================================
+达标要求: 7/10 客户端 (70%)
+当前状态: 7/10 客户端达标
+
+客户端详细状态:
+
+[+] 已达标客户端 (7个):
+  Client 6: 0.8000 [+]
+  Client 1: 0.7667 [+]
+  Client 8: 0.7640 [+]
+  Client 9: 0.7480 [+]
+  Client 3: 0.6867 [+]
+  Client 0: 0.6587 [+]
+  Client 4: 0.5787 [+]
+
+[-] 未达标客户端 (3个):
+  Client 2: 0.6760 (仍在训练中...)
+  Client 7: 0.6573 (仍在训练中...)
+  Client 5: 0.5493 (仍在训练中...)
+
+当前阈值: 0.7381
+平均准确率: 0.6885
+最佳准确率: 0.8000
+================================================================================
+
+[>>] Phase Transition Triggered! (70% Threshold Strategy)
+   Qualified clients: 7/10
+   Required: 7 (70%)
+   Remaining: 3 clients will join dynamically in Phase 2
+   Phase 1 completed: 11 rounds (min: 10, max: 25)
+================================================================================
+
+
+============================================================
+PHASE TRANSITION: Phase 1 → Phase 2
+============================================================
+Virtual data pool size: 6519
+Phase 2 Algorithm: FEDAVG
+Phase 2 Max Rounds: 50
+============================================================
+
+  [Algorithm Name] Updated: FedGpro → FedGpro-FedAvg
+  Client 0: Phase 2 (already contributed virtual data)
+  Client 1: Phase 2 (already contributed virtual data)
+  Client 2: Phase 2 (can still contribute virtual data until round 20)
+  Client 3: Phase 2 (already contributed virtual data)
+  Client 4: Phase 2 (already contributed virtual data)
+  Client 5: Phase 2 (can still contribute virtual data until round 20)
+  Client 6: Phase 2 (already contributed virtual data)
+  Client 7: Phase 2 (can still contribute virtual data until round 20)
+  Client 8: Phase 2 (already contributed virtual data)
+  Client 9: Phase 2 (already contributed virtual data)
+[OK] Phase 2 initialized successfully!
+   Algorithm: FEDAVG
+   All clients enter Phase 2: 10 (100%)
+   - Already contributed virtual data: 7 (70%)
+   - Can still contribute (until round 20): 3 (30%)
+   Virtual data pool size: 6519 samples
+   Phase 1 will continue in parallel until round 20
+
+
+============================================================
+Round 10 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 1.0447
+Averaged Test Accuracy: 0.6885
+Averaged Test AUC: 0.5798
+Averaged Test Precision: 0.6893
+Averaged Test Recall: 0.6885
+Averaged Test F1-Score: 0.6779
+Std Test Accuracy: 0.0783
+Std Test AUC: 0.0811
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 1.6013
+Averaged Test Accuracy (Personalized): 0.5695
+Averaged Test AUC (Personalized): 0.5146
+Std Test Accuracy (Personalized): 0.1021
+Std Test AUC (Personalized): 0.0830
+------------------------------------------------------------
+Round 10 time cost: 14.61s
+------------------------------------------------------------
+
+[Phase 2 - Round 11] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 11 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.7603
+Averaged Test Accuracy: 0.7577
+Averaged Test AUC: 0.6097
+Averaged Test Precision: 0.7034
+Averaged Test Recall: 0.7577
+Averaged Test F1-Score: 0.7214
+Std Test Accuracy: 0.0558
+Std Test AUC: 0.1058
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.6647
+Averaged Test Accuracy (Personalized): 0.7223
+Averaged Test AUC (Personalized): 0.5823
+Std Test Accuracy (Personalized): 0.0629
+Std Test AUC (Personalized): 0.0991
+------------------------------------------------------------
+Round 11 time cost: 28.17s
+------------------------------------------------------------
+
+[Phase 2 - Round 12] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 12 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.6485
+Averaged Test Accuracy: 0.7728
+Averaged Test AUC: 0.6440
+Averaged Test Precision: 0.7232
+Averaged Test Recall: 0.7728
+Averaged Test F1-Score: 0.7308
+Std Test Accuracy: 0.0505
+Std Test AUC: 0.1003
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5934
+Averaged Test Accuracy (Personalized): 0.7653
+Averaged Test AUC (Personalized): 0.6317
+Std Test Accuracy (Personalized): 0.0557
+Std Test AUC (Personalized): 0.0962
+------------------------------------------------------------
+Round 12 time cost: 28.14s
+------------------------------------------------------------
+
+[Phase 2 - Round 13] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 13 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5954
+Averaged Test Accuracy: 0.7735
+Averaged Test AUC: 0.6595
+Averaged Test Precision: 0.7279
+Averaged Test Recall: 0.7735
+Averaged Test F1-Score: 0.7247
+Std Test Accuracy: 0.0580
+Std Test AUC: 0.0963
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5603
+Averaged Test Accuracy (Personalized): 0.7729
+Averaged Test AUC (Personalized): 0.6621
+Std Test Accuracy (Personalized): 0.0558
+Std Test AUC (Personalized): 0.0837
+------------------------------------------------------------
+Round 13 time cost: 27.97s
+------------------------------------------------------------
+
+[Phase 2 - Round 14] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 14 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5614
+Averaged Test Accuracy: 0.7713
+Averaged Test AUC: 0.6724
+Averaged Test Precision: 0.7247
+Averaged Test Recall: 0.7713
+Averaged Test F1-Score: 0.7182
+Std Test Accuracy: 0.0588
+Std Test AUC: 0.0914
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5377
+Averaged Test Accuracy (Personalized): 0.7797
+Averaged Test AUC (Personalized): 0.6806
+Std Test Accuracy (Personalized): 0.0499
+Std Test AUC (Personalized): 0.0769
+------------------------------------------------------------
+Round 14 time cost: 23.78s
+------------------------------------------------------------
+
+[Phase 2 - Round 15] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 15 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5446
+Averaged Test Accuracy: 0.7639
+Averaged Test AUC: 0.6844
+Averaged Test Precision: 0.7324
+Averaged Test Recall: 0.7639
+Averaged Test F1-Score: 0.7062
+Std Test Accuracy: 0.0675
+Std Test AUC: 0.0868
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5211
+Averaged Test Accuracy (Personalized): 0.7785
+Averaged Test AUC (Personalized): 0.6922
+Std Test Accuracy (Personalized): 0.0501
+Std Test AUC (Personalized): 0.0747
+------------------------------------------------------------
+Round 15 time cost: 21.90s
+------------------------------------------------------------
+
+[Phase 2 - Round 16] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 16 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5313
+Averaged Test Accuracy: 0.7633
+Averaged Test AUC: 0.6893
+Averaged Test Precision: 0.7104
+Averaged Test Recall: 0.7633
+Averaged Test F1-Score: 0.7049
+Std Test Accuracy: 0.0684
+Std Test AUC: 0.0836
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5095
+Averaged Test Accuracy (Personalized): 0.7805
+Averaged Test AUC (Personalized): 0.7026
+Std Test Accuracy (Personalized): 0.0536
+Std Test AUC (Personalized): 0.0687
+------------------------------------------------------------
+Round 16 time cost: 21.70s
+------------------------------------------------------------
+
+[Phase 2 - Round 17] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 17 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5229
+Averaged Test Accuracy: 0.7581
+Averaged Test AUC: 0.6909
+Averaged Test Precision: 0.7122
+Averaged Test Recall: 0.7581
+Averaged Test F1-Score: 0.6933
+Std Test Accuracy: 0.0736
+Std Test AUC: 0.0809
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.5012
+Averaged Test Accuracy (Personalized): 0.7801
+Averaged Test AUC (Personalized): 0.7087
+Std Test Accuracy (Personalized): 0.0530
+Std Test AUC (Personalized): 0.0686
+------------------------------------------------------------
+Round 17 time cost: 22.09s
+------------------------------------------------------------
+
+[Phase 2 - Round 18] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 18 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5152
+Averaged Test Accuracy: 0.7569
+Averaged Test AUC: 0.6984
+Averaged Test Precision: 0.7140
+Averaged Test Recall: 0.7569
+Averaged Test F1-Score: 0.6886
+Std Test Accuracy: 0.0744
+Std Test AUC: 0.0789
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.4938
+Averaged Test Accuracy (Personalized): 0.7785
+Averaged Test AUC (Personalized): 0.7136
+Std Test Accuracy (Personalized): 0.0576
+Std Test AUC (Personalized): 0.0674
+------------------------------------------------------------
+Round 18 time cost: 21.30s
+------------------------------------------------------------
+
+[Phase 2 - Round 19] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 19 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5162
+Averaged Test Accuracy: 0.7517
+Averaged Test AUC: 0.7005
+Averaged Test Precision: 0.6895
+Averaged Test Recall: 0.7517
+Averaged Test F1-Score: 0.6794
+Std Test Accuracy: 0.0802
+Std Test AUC: 0.0772
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.4898
+Averaged Test Accuracy (Personalized): 0.7752
+Averaged Test AUC (Personalized): 0.7184
+Std Test Accuracy (Personalized): 0.0596
+Std Test AUC (Personalized): 0.0649
+------------------------------------------------------------
+Round 19 time cost: 21.65s
+------------------------------------------------------------
+
+[Phase 2 - Round 20] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+
+================================================================================
+[Round 20] Phase 1 Training Window CLOSED (20 rounds limit reached)
+================================================================================
+Finalizing Phase 1: 3 clients did not contribute virtual data
+Note: These clients will continue Phase 2 training but NOT contribute to virtual data pool
+
+  Client 2: contributes_virtual_data permanently set to False
+  Client 5: contributes_virtual_data permanently set to False
+  Client 7: contributes_virtual_data permanently set to False
+
+[OK] Phase 1 finalized!
+   - Virtual data contributors: 7/10
+   - Non-contributors (permanent): 3
+   - Virtual data pool size (final): 6519
+================================================================================
+
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 20 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5119
+Averaged Test Accuracy: 0.7533
+Averaged Test AUC: 0.7044
+Averaged Test Precision: 0.6957
+Averaged Test Recall: 0.7533
+Averaged Test F1-Score: 0.6793
+Std Test Accuracy: 0.0791
+Std Test AUC: 0.0762
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.4855
+Averaged Test Accuracy (Personalized): 0.7755
+Averaged Test AUC (Personalized): 0.7214
+Std Test Accuracy (Personalized): 0.0584
+Std Test AUC (Personalized): 0.0643
+------------------------------------------------------------
+Round 20 time cost: 21.84s
+------------------------------------------------------------
+
+[Phase 2 - Round 21] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+
+================================================================================
+[Round 21] Phase 1 Training Window CLOSED (20 rounds limit reached)
+================================================================================
+Finalizing Phase 1: 3 clients did not contribute virtual data
+Note: These clients will continue Phase 2 training but NOT contribute to virtual data pool
+
+  Client 2: contributes_virtual_data permanently set to False
+  Client 5: contributes_virtual_data permanently set to False
+  Client 7: contributes_virtual_data permanently set to False
+
+[OK] Phase 1 finalized!
+   - Virtual data contributors: 7/10
+   - Non-contributors (permanent): 3
+   - Virtual data pool size (final): 6519
+================================================================================
+
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 21 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5088
+Averaged Test Accuracy: 0.7540
+Averaged Test AUC: 0.7064
+Averaged Test Precision: 0.6845
+Averaged Test Recall: 0.7540
+Averaged Test F1-Score: 0.6800
+Std Test Accuracy: 0.0781
+Std Test AUC: 0.0747
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.4830
+Averaged Test Accuracy (Personalized): 0.7724
+Averaged Test AUC (Personalized): 0.7219
+Std Test Accuracy (Personalized): 0.0610
+Std Test AUC (Personalized): 0.0635
+------------------------------------------------------------
+Round 21 time cost: 21.64s
+------------------------------------------------------------
+
+[Phase 2 - Round 22] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+
+================================================================================
+[Round 22] Phase 1 Training Window CLOSED (20 rounds limit reached)
+================================================================================
+Finalizing Phase 1: 3 clients did not contribute virtual data
+Note: These clients will continue Phase 2 training but NOT contribute to virtual data pool
+
+  Client 2: contributes_virtual_data permanently set to False
+  Client 5: contributes_virtual_data permanently set to False
+  Client 7: contributes_virtual_data permanently set to False
+
+[OK] Phase 1 finalized!
+   - Virtual data contributors: 7/10
+   - Non-contributors (permanent): 3
+   - Virtual data pool size (final): 6519
+================================================================================
+
+  [FedAvg] Weighted average aggregation
+[Phase 2] Aggregation complete: FEDAVG
+
+============================================================
+Round 22 | Phase 2
+============================================================
+
+Evaluate global model
+Averaged Train Loss: 0.5049
+Averaged Test Accuracy: 0.7523
+Averaged Test AUC: 0.7101
+Averaged Test Precision: 0.6895
+Averaged Test Recall: 0.7523
+Averaged Test F1-Score: 0.6784
+Std Test Accuracy: 0.0796
+Std Test AUC: 0.0728
+
+Evaluate personalized models
+Averaged Train Loss (Personalized): 0.4831
+Averaged Test Accuracy (Personalized): 0.7696
+Averaged Test AUC (Personalized): 0.7237
+Std Test Accuracy (Personalized): 0.0646
+Std Test AUC (Personalized): 0.0640
+------------------------------------------------------------
+Round 22 time cost: 21.81s
+------------------------------------------------------------
+
+[Phase 2 - Round 23] Algorithm: FEDAVG
+  Phase 2 clients: 7 | Phase 1 clients (training): 3
+
+================================================================================
+[Round 23] Phase 1 Training Window CLOSED (20 rounds limit reached)
+================================================================================
+Finalizing Phase 1: 3 clients did not contribute virtual data
+Note: These clients will continue Phase 2 training but NOT contribute to virtual data pool
+
+  Client 2: contributes_virtual_data permanently set to False
+  Client 5: contributes_virtual_data permanently set to False
+  Client 7: contributes_virtual_data permanently set to False
+
+[OK] Phase 1 finalized!
+   - Virtual data contributors: 7/10
+   - Non-contributors (permanent): 3
+   - Virtual data pool size (final): 6519
+================================================================================
+

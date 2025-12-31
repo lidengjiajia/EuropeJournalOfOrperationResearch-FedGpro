@@ -324,11 +324,7 @@ def run(args):
             'FedDitto': 'Ditto',
             'Per-FedAvg': 'PerAvg',
             'FedMoon': 'MOON',
-            # 'FedPso': 'FedPSO',  # ❌ 移除：导致文件夹名错误
-            # 'FedGwo': 'FedGWO',  # ❌ 移除：导致文件夹名错误
             'FedGpro-FedScaffold': 'FedGpro-SCAFFOLD',
-            # 'FedGpro-FedGwo': 'FedGpro-FedGWO',  # ❌ 移除
-            # 'FedGpro-FedPso': 'FedGpro-FedPSO',  # ❌ 移除
         }
         if base_algorithm in algorithm_mapping:
             base_algorithm = algorithm_mapping[base_algorithm]
