@@ -117,12 +117,6 @@ class clientGpro(Client):
         self.noise_type = getattr(args, 'fedgpro_noise_type', None)  # None, 'laplace', 'gaussian'
         self.delta = getattr(args, 'fedgpro_delta', 1e-5)  # For Gaussian noise
         
-        # Ditto-style personalized model (Phase2 only)
-        self.model_per = None
-        self.optimizer_per = None
-        self.mu_ditto = getattr(args, 'mu', 0.01)  # Ditto regularization parameter
-        self.plocal_epochs = getattr(args, 'plocal_epochs', 3)  # Personalized training epochs
-        
         # Component switches for ablation study
         self.use_vae_generation = getattr(args, 'fedgpro_use_vae', True)  # Default: enabled
         self.use_prototype_loss = getattr(args, 'fedgpro_use_prototype', True)  # Default: enabled
@@ -492,14 +486,14 @@ class clientGpro(Client):
         self.accuracy_history.append(self.accuracy)
         
         # Check for early stopping and virtual data generation
-        # 前5轮强制训练，不检查早停；6轮后开始检查
+        # 前30轮强制训练，不检查早停；第31轮后开始检查
         current_round = len(self.accuracy_history)  # 1-indexed
         
-        if current_round <= 5:
-            # Round 1-5: 强制训练，不检查早停
+        if current_round <= 30:
+            # Round 1-30: 强制训练，不检查早停
             pass
         elif not self.early_stopped:
-            # Round 6+: 检查早停
+            # Round 31+: 检查早停
             self.early_stopped = self._check_early_stopping()
             if self.early_stopped:
                 recent_3 = self.accuracy_history[-3:] if len(self.accuracy_history) >= 3 else self.accuracy_history
@@ -1143,17 +1137,13 @@ class clientGpro(Client):
     
     def test_metrics_personalized(self):
         """
-        Evaluate personalized model (Ditto-style)
+        Test personalized model performance
         
         Returns:
             test_acc: Number of correct predictions
             test_num: Total number of test samples
-            auc: Area under ROC curve
+            auc: AUC score
         """
-        if self.model_per is None:
-            # Fallback to global model if personalized model not initialized
-            return self.test_metrics()
-        
         testloaderfull = self.load_test_data()
         self.model_per.eval()
         
@@ -1199,37 +1189,12 @@ class clientGpro(Client):
     
     def train_metrics_personalized(self):
         """
-        Compute training metrics on personalized model (Ditto-style)
-        
-        Includes Ditto regularization term in loss calculation:
-        L = L_CE + μ/2 * ||w_per - w_global||²
+        Compute personalized model training metrics
         
         Returns:
-            train_loss: Average training loss (with regularization)
+            train_loss: Average training loss
             train_num: Total number of training samples
         """
-        if self.model_per is None:
-            # Fallback to global model
-            trainloader = self.load_train_data()
-            self.model.eval()
-            
-            train_num = 0
-            losses = 0
-            with torch.no_grad():
-                for x, y in trainloader:
-                    if type(x) == type([]):
-                        x[0] = x[0].to(self.device).double()
-                    else:
-                        x = x.to(self.device).double()
-                    y = y.to(self.device)
-                    output = self.model(x)
-                    loss = self.loss(output, y)
-                    train_num += y.shape[0]
-                    losses += loss.item() * y.shape[0]
-            
-            return losses, train_num
-        
-        # Evaluate personalized model with Ditto regularization
         trainloader = self.load_train_data()
         self.model_per.eval()
         
@@ -1247,64 +1212,12 @@ class clientGpro(Client):
                 output = self.model_per(x)
                 loss = self.loss(output, y)
                 
-                # Add Ditto regularization term: μ/2 * ||w_per - w_global||²
-                gm = torch.cat([p.data.view(-1) for p in self.model.parameters()], dim=0)
-                pm = torch.cat([p.data.view(-1) for p in self.model_per.parameters()], dim=0)
-                loss += 0.5 * self.mu_ditto * torch.norm(gm - pm, p=2)
-                
                 train_num += y.shape[0]
                 losses += loss.item() * y.shape[0]
         
         return losses, train_num
     
     # ==================== Phase 2: Algorithm-Specific Training ====================
-    
-    def ptrain(self):
-        """
-        Ditto-style personalized model training (Phase2 only)
-        
-        Trains the local personalized model with Ditto regularization:
-        L_per = L_CE(w_per) + μ/2 * ||w_per - w_global||²
-        
-        This is automatically handled by PerturbedGradientDescent optimizer.
-        """
-        if self.model_per is None:
-            print(f"  Client {self.id}: Personalized model not initialized, skipping ptrain")
-            return
-        
-        trainloader = self.load_train_data()
-        self.model_per.train()
-        
-        start_time = time.time()
-        
-        max_local_epochs = self.plocal_epochs
-        if self.train_slow:
-            max_local_epochs = np.random.randint(1, max_local_epochs // 2)
-        
-        for epoch in range(max_local_epochs):
-            for x, y in trainloader:
-                if type(x) == type([]):
-                    x[0] = x[0].to(self.device).double()
-                else:
-                    x = x.to(self.device).double()
-                y = y.to(self.device)
-                
-                if self.train_slow:
-                    time.sleep(0.1 * np.abs(np.random.rand()))
-                
-                # Forward pass on personalized model
-                output = self.model_per(x)
-                loss = self.loss(output, y)
-                
-                # Backward pass
-                self.optimizer_per.zero_grad()
-                loss.backward()
-                
-                # Ditto regularization: step() uses global model parameters
-                # Automatically adds: grad += μ * (w_per - w_global)
-                self.optimizer_per.step(self.model.parameters(), self.device)
-        
-        self.train_time_cost['total_cost'] += time.time() - start_time
     
     def train_phase2(self):
         """
@@ -1313,16 +1226,12 @@ class clientGpro(Client):
         Dispatches to appropriate training method based on self.phase2_algorithm
         
         Supported algorithms:
-        - fedavg: Standard weighted averaging (with Ditto personalization)
+        - fedavg: Standard weighted averaging
         - fedprox: Proximal term regularization
         - fedscaffold: Variance reduction with control variates
         """
         # Ensure model is double precision for Phase 2 (consistent with Phase 1)
         self.model = self.model.double()
-        
-        # Initialize personalized model if not already done
-        if self.model_per is None:
-            self.init_personalized_model()
         
         if self.phase2_algorithm == 'fedavg':
             return self._train_fedavg()
@@ -1336,12 +1245,7 @@ class clientGpro(Client):
             return self._train_fedavg()
     
     def _train_fedavg(self):
-        """
-        FedAvg: Standard training on mixed data
-        
-        Note: ptrain() is already called by server before this method.
-        This method only trains the global model.
-        """
+        """FedAvg: Standard training on mixed data"""
         mixed_trainloader = self._create_mixed_dataloader(self.load_train_data())
         self.model.train()
         
@@ -2082,21 +1986,8 @@ class clientGpro(Client):
         return delta_y, delta_c
     
     def init_personalized_model(self):
-        """
-        Initialize Ditto-style personalized model for Phase2
-        Called when transitioning from Phase1 to Phase2
-        """
-        if self.model_per is None:
-            import copy
-            self.model_per = copy.deepcopy(self.model).double()
-            
-            from flcore.optimizers.fedoptimizer import PerturbedGradientDescent
-            self.optimizer_per = PerturbedGradientDescent(
-                self.model_per.parameters(),
-                lr=self.learning_rate,
-                mu=self.mu_ditto
-            )
-            print(f"  Client {self.id}: Initialized personalized model for Ditto-style training (μ={self.mu_ditto})")
+        """Initialize Ditto/pFedMe: Personalized model"""
+        self.personalized_model = copy.deepcopy(self.model).double()
     
     def get_validation_accuracy(self):
         """
@@ -2121,14 +2012,14 @@ class clientGpro(Client):
             bool: True if all conditions met
         """
         # === 参数配置 ===
-        min_training_rounds = 10   # 至少10轮训练（但前5轮已被跳过检查）
+        min_training_rounds = 30   # 至少30轮训练（与train()中的检查保持一致）
         min_stable_rounds = 3      # 条件(2)(3): 检查最近3轮
         max_fluctuation = 0.02     # 条件(3): 最大波动率2%
         threshold_tolerance = 0.02  # 条件(2): 阈值容忍度2%
         
         print(f"\n  [Client {self.id}] 早停检查 (当前准确率: {self.accuracy:.4f})")
         
-        # === 条件(1): 前10轮强制训练，不检查早停 ===
+        # === 条件(1): 前30轮强制训练，不检查早停 ===
         if len(self.accuracy_history) < min_training_rounds:
             print(f"    [-] 条件(1): 训练轮数不足 ({len(self.accuracy_history)}/{min_training_rounds}轮) - 强制训练")
             return False

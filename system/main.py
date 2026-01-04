@@ -324,7 +324,11 @@ def run(args):
             'FedDitto': 'Ditto',
             'Per-FedAvg': 'PerAvg',
             'FedMoon': 'MOON',
+            # 'FedPso': 'FedPSO',  # ❌ 移除：导致文件夹名错误
+            # 'FedGwo': 'FedGWO',  # ❌ 移除：导致文件夹名错误
             'FedGpro-FedScaffold': 'FedGpro-SCAFFOLD',
+            # 'FedGpro-FedGwo': 'FedGpro-FedGWO',  # ❌ 移除
+            # 'FedGpro-FedPso': 'FedGpro-FedPSO',  # ❌ 移除
         }
         if base_algorithm in algorithm_mapping:
             base_algorithm = algorithm_mapping[base_algorithm]
@@ -740,7 +744,7 @@ if __name__ == "__main__":
     parser.add_argument('--fedgpro_lambda_recon', type=float, default=1.0,
                         help='Weight for VAE reconstruction loss')
     parser.add_argument('--fedgpro_lambda_kl', type=float, default=0.1,
-                        help='Weight for KL divergence loss (Optimized: 0.01→0.1, +2.73% F1)')
+                        help='Weight for KL divergence loss (Optimized: 0.01 to 0.1, +2.73 percent F1)')
     parser.add_argument('--fedgpro_lambda_proto', type=float, default=0.1,
                         help='Weight for prototype loss (Optimized: kept at 0.1)')
     parser.add_argument('--fedgpro_proto_momentum', type=float, default=0.95,
@@ -754,7 +758,7 @@ if __name__ == "__main__":
     parser.add_argument('--fedgpro_threshold_min', type=float, default=0.60,
                         help='Minimum threshold value (client forced training for first 10 rounds)')
     parser.add_argument('--fedgpro_phase_transition_threshold', type=float, default=0.70,
-                        help='Percentage of clients that must meet threshold to trigger phase transition (default: 0.70 = 70%%, Phase 1 max 20 rounds)')
+                        help='Percentage of clients that must meet threshold to trigger phase transition (default: 0.70 = 70 percent, Phase 1 max 20 rounds)')
     parser.add_argument('--fedgpro_phase2_agg', type=str, default='fedpso',
                         choices=['fedavg', 'fedcs', 'fedprox', 'fedgwo', 'fedpso', 'fedwoa', 'fedproto', 'moon', 'scaffold', 'perfedavg', 'ditto', 'fedrep', 'pfedme'],
                         help='Phase 2 aggregation algorithm: fedpso (default), fedavg, fedcs, fedprox, fedgwo, fedwoa, fedproto, moon, scaffold, perfedavg, ditto, fedrep, pfedme')

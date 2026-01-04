@@ -70,7 +70,7 @@ class FedGpro(Server):
         self.phase_transition_threshold = getattr(args, 'fedgpro_phase_transition_threshold', 0.8)
         
         # Phase control: round tracking
-        self.phase2_rounds = getattr(args, 'fedgpro_phase2_rounds', None)  # Max rounds for Phase 2 (None=unlimited)
+        self.phase2_rounds = getattr(args, 'fedgpro_phase2_rounds', 200)  # Phase 2固定训练200轮（默认值）
         self.phase2_start_round = None  # Track when Phase 2 started
         self.phase2_current_round = 0  # Counter for Phase 2 rounds
         
@@ -330,8 +330,13 @@ class FedGpro(Server):
                     print(f"\n{'='*60}")
                     print(f"Final Evaluation - Round {i} | Phase {self.current_phase}")
                     print(f"{'='*60}")
-                    print("\nEvaluate global model")
-                    self.evaluate()
+                    # Phase 2最终评估：使用个性化模型（与FedDitto一致）
+                    print("\nEvaluate personalized models (Primary)")
+                    self.evaluate_personalized()
+                    print("\nEvaluate global model (Reference)")
+                    temp_acc = []
+                    temp_loss = []
+                    self.evaluate(acc=temp_acc, loss=temp_loss)
                     break
             
             # Phase-specific training
@@ -346,21 +351,38 @@ class FedGpro(Server):
                 print(f"\n{'='*60}")
                 print(f"Round {i} | Phase {self.current_phase}")
                 print(f"{'='*60}")
-                print("\nEvaluate global model")
-                self.evaluate()
                 
-                # Evaluate personalized model (Phase 2 only)
-                if self.current_phase == 2:
-                    print("\nEvaluate personalized models")
+                # Phase 1: 评估全局模型（统计收集阶段）
+                if self.current_phase == 1:
+                    print("\nEvaluate global model")
+                    self.evaluate()
+                # Phase 2: 主要评估个性化模型（与FedDitto保持一致）
+                else:
+                    print("\nEvaluate personalized models (Primary)")
                     self.evaluate_personalized()
+                    # 全局模型仅作参考，不记录到rs_test_acc（避免重复）
+                    print("\nEvaluate global model (Reference only)")
+                    temp_acc = []
+                    temp_loss = []
+                    self.evaluate(acc=temp_acc, loss=temp_loss)
+                    print(f"  [Note] Global model results not saved to rs_test_acc (using personalized model as primary metric)")
             
             self.Budget.append(time.time() - s_t)
             print(f"-" * 60)
             print(f"Round {i} time cost: {time.time() - s_t:.2f}s")
             print(f"-" * 60)
             
-            if self.auto_break and self.check_done(acc_lss=[self.rs_test_acc], top_cnt=self.top_cnt):
-                break
+            # 🔥 关键修改：Phase 2期间禁用auto_break，确保训练满200轮
+            # Phase 1允许auto_break（如果早期收敛可提前转Phase 2）
+            if self.current_phase == 1:
+                # Phase 1: 允许auto_break（可提前转Phase 2）
+                if self.auto_break and self.check_done(acc_lss=[self.rs_test_acc], top_cnt=self.top_cnt):
+                    print(f"\n[Phase 1 Auto Break] 准确率已收敛，提前检查Phase转换...")
+                    # 不直接break，而是检查是否可以转Phase 2
+                    if self.check_phase_transition(i):
+                        self.transition_to_phase2()
+            # Phase 2: 禁用auto_break，必须训练满phase2_rounds轮
+            # （已在train()开头的Phase 2轮次检查中处理）
         
         print("\nBest accuracy:")
         if self.rs_test_acc:
@@ -440,6 +462,9 @@ class FedGpro(Server):
         """
         Evaluate personalized models with detailed statistics
         
+        在Phase 2中，这是主要的评估方法（与FedDitto一致）
+        个性化模型的测试结果将记录到rs_test_acc中作为主要指标
+        
         Args:
             acc: Optional list to append accuracy
             loss: Optional list to append loss
@@ -453,6 +478,8 @@ class FedGpro(Server):
         accs = [a / n for a, n in zip(stats[2], stats[1])]
         aucs = [a / n for a, n in zip(stats[3], stats[1])]
         
+        # 🔥 关键修改：在Phase 2中，个性化模型结果作为主要指标记录到rs_test_acc
+        # 这确保了与FedDitto的公平对比（都使用个性化模型测试）
         if acc == None:
             self.rs_test_acc.append(test_acc)
         else:
@@ -885,22 +912,22 @@ class FedGpro(Server):
         Check if Phase 1 should transition to Phase 2
         
         Logic:
-        1. First 10 rounds are forced Phase 1 (no early stop check)
-        2. Round 11-25: Check if 70% clients are qualified
-        3. Round 25: Force Phase 1 to finalize (close virtual data contribution window)
+        1. First 30 rounds are forced Phase 1 (no early stop check)
+        2. Round 31-50: Check if 70% clients are qualified
+        3. Round 50: Force Phase 1 to finalize (close virtual data contribution window)
         
         Design Rationale:
-        - Force 10 rounds to ensure VAE quality and basic learning
+        - Force 30 rounds to ensure VAE quality and sufficient learning
         - 70% threshold is relaxed for faster Phase 2 entry
-        - Max 25 rounds Phase 1 to give more training time
+        - Max 50 rounds Phase 1 to give more training time
         - Time decay helps weak clients qualify
         
         Returns:
             bool: True if should transition to Phase 2
         """
-        # Force Phase 1 for first 10 rounds
-        min_phase1_rounds = 10
-        max_phase1_rounds = 25  # Phase 1最多25轮
+        # Force Phase 1 for first 30 rounds
+        min_phase1_rounds = 30
+        max_phase1_rounds = 50  # Phase 1最多50轮
         
         if round_num < min_phase1_rounds:
             print(f"\n[Phase Transition Check] Round {round_num+1}: 前{min_phase1_rounds}轮强制Phase 1（共同训练，确保VAE质量）")
@@ -1041,11 +1068,6 @@ class FedGpro(Server):
         # Initialize algorithm-specific states for ALL clients (100%)
         # 所有客户端都参与Phase 2，因此都需要初始化算法状态
         
-        # ALWAYS initialize personalized models (Ditto-style) for Phase 2
-        print(f"  [Phase 2 Init] Initializing Ditto-style personalized models for all clients...")
-        for client in self.clients:
-            client.init_personalized_model()
-        
         if self.phase2_aggregation == 'moon':
             # MOON: Initialize previous models for contrastive learning
             for client in self.clients:
@@ -1055,8 +1077,9 @@ class FedGpro(Server):
             for client in self.clients:
                 client.init_scaffold_controls()
         elif self.phase2_aggregation == 'ditto':
-            # Ditto: Already initialized above
-            pass
+            # Ditto: Initialize personalized models
+            for client in self.clients:
+                client.init_personalized_model()
         elif self.phase2_aggregation == 'fedgwo':
             # FedGWO: Initialize wolf positions
             self.gwo_alpha_pos = None  # Alpha wolf (best)
