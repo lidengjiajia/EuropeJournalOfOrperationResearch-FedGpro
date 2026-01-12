@@ -196,6 +196,19 @@ def _ts():
     """时间戳"""
     return datetime.now().strftime('%H:%M:%S')
 
+def get_actual_algorithm_name(algorithm, dataset, hetero_type):
+    """获取实际的算法名称
+    
+    servergpro.py在save_results时使用self.original_algorithm（初始化时保存的值）
+    而不是运行中改变后的self.algorithm
+    所以，无论fedgpro_phase2_agg是什么，保存的目录名都基于传入的算法名
+    
+    如果build_command传的是'FedGpro'，结果目录就会是 FedGpro
+    如果传的是'FedGpro-FedAvg'，结果目录就会是 FedGpro-FedAvg
+    """
+    # 返回build_command中传递的算法名
+    return algorithm
+
 def check_missing_experiments():
     """检查缺失的实验文件"""
     print("\n" + "="*80)
@@ -206,11 +219,14 @@ def check_missing_experiments():
     for dataset in DATASETS:
         for hetero in HETEROGENEITY_TYPES.keys():
             for algo in ALGORITHMS:
+                # 🔥 获取实际的算法名称（如FedGpro会变成FedGpro-Ditto）
+                actual_algo = get_actual_algorithm_name(algo, dataset, hetero)
+                
                 # 基线实验目录结构: 每个算法配置一个独立目录
-                # 目录名格式: {dataset}_{algo}_{hetero}
-                results_dir = BASE_DIR / 'system' / 'results' / f"{dataset}_{algo}_{hetero}"
-                # 文件名格式: {dataset}_{algo}_{hetero}_*.h5 (不含test前缀)
-                file_prefix = f"{dataset}_{algo}_{hetero}"
+                # 目录名格式: {dataset}_{actual_algo}_{hetero}
+                results_dir = BASE_DIR / 'system' / 'results' / f"{dataset}_{actual_algo}_{hetero}"
+                # 文件名格式: {dataset}_{actual_algo}_{hetero}_*.h5 (不含test前缀)
+                file_prefix = f"{dataset}_{actual_algo}_{hetero}"
                 
                 if not results_dir.exists():
                     missing.append((dataset, hetero, algo, 0))

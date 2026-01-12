@@ -88,13 +88,15 @@ def read_h5_metrics(h5_file_path):
 
 def parse_folder_name(folder_name):
     """
-    解析文件夹名称，提取数据集、算法、异质性类型
+    解析文件夹名称，提取数据集、算法、异质性类型、是否为消融实验
     
     Args:
-        folder_name: 例如 "Uci_FedAvg_feature"
+        folder_name: 例如 
+            "Uci_FedAvg_feature" (基线)
+            "Uci_FedGpro_Ablation_Full_Model_feature" (消融)
     
     Returns:
-        tuple: (dataset, algorithm, heterogeneity) 或 None
+        tuple: (dataset, algorithm, heterogeneity, is_ablation, ablation_config) 或 None
     """
     parts = folder_name.split('_')
     
@@ -103,35 +105,55 @@ def parse_folder_name(folder_name):
     
     dataset = parts[0]  # Uci 或 Xinwang
     
-    # 处理算法名称可能包含多个单词的情况（如 Per-FedAvg）
-    heterogeneity = parts[-1]  # feature, label, quantity, iid
-    
-    # 算法名称是中间所有部分
-    algorithm = '_'.join(parts[1:-1])
-    
     # 过滤掉无效的异质性类型
     valid_heterogeneities = ['feature', 'label', 'quantity', 'iid']
+    heterogeneity = parts[-1]  # feature, label, quantity, iid
     if heterogeneity not in valid_heterogeneities:
         return None
     
     # 过滤掉中心化训练结果
-    if 'Centralized' in algorithm:
+    if 'Centralized' in folder_name:
         return None
     
-    return dataset, algorithm, heterogeneity
+    # 判断是否为消融实验
+    is_ablation = 'Ablation' in folder_name
+    
+    if is_ablation:
+        # 消融实验: Uci_FedGpro_Ablation_Full_Model_feature
+        # parts: ['Uci', 'FedGpro', 'Ablation', 'Full', 'Model', 'feature']
+        # 算法总是 FedGpro，消融配置 = 'Full_Model'
+        
+        if len(parts) < 5:  # 至少要有 Dataset, FedGpro, Ablation, Config, Hetero
+            return None
+        
+        algorithm = 'FedGpro'
+        
+        # 消融配置名 = Ablation 后面到 Hetero 前面的所有部分
+        ablation_config = '_'.join(parts[3:-1])  # e.g., "Full_Model"
+        
+        return dataset, algorithm, heterogeneity, is_ablation, ablation_config
+    else:
+        # 基线实验: Uci_FedAvg_feature
+        # 或者: Uci_FedGpro_feature
+        algorithm = '_'.join(parts[1:-1])
+        
+        return dataset, algorithm, heterogeneity, is_ablation, None
 
 
 def collect_all_results(results_dir):
     """
-    收集所有实验结果
+    收集所有实验结果，分别存储基线实验和消融实验
     
     Args:
         results_dir: system/results目录路径
     
     Returns:
-        dict: {(dataset, algorithm, heterogeneity): [metrics_dict_1, ..., metrics_dict_5]}
+        tuple: (baseline_results, ablation_results)
+            baseline_results: {(dataset, algorithm, heterogeneity): [metrics_dict_1, ...]}
+            ablation_results: {(dataset, ablation_config, heterogeneity): [metrics_dict_1, ...]}
     """
-    results = defaultdict(list)
+    baseline_results = defaultdict(list)
+    ablation_results = defaultdict(list)
     
     # 遍历所有文件夹
     for folder_name in os.listdir(results_dir):
@@ -145,7 +167,7 @@ def collect_all_results(results_dir):
         if parsed is None:
             continue
         
-        dataset, algorithm, heterogeneity = parsed
+        dataset, algorithm, heterogeneity, is_ablation, ablation_config = parsed
         
         # 读取该文件夹下的所有h5文件
         h5_files = sorted([f for f in os.listdir(folder_path) if f.endswith('.h5')])
@@ -153,17 +175,20 @@ def collect_all_results(results_dir):
         if len(h5_files) == 0:
             continue
         
-        print(f"Processing: {dataset} | {algorithm} | {heterogeneity} | Files: {len(h5_files)}")
-        
         # 读取每个重复实验的结果
         for h5_file in h5_files:
             h5_path = os.path.join(folder_path, h5_file)
             metrics = read_h5_metrics(h5_path)
             
             if metrics is not None:
-                results[(dataset, algorithm, heterogeneity)].append(metrics)
+                if is_ablation:
+                    print(f"Ablation: {dataset} | {ablation_config} | {heterogeneity} | Files: {len(h5_files)}")
+                    ablation_results[(dataset, ablation_config, heterogeneity)].append(metrics)
+                else:
+                    print(f"Baseline: {dataset} | {algorithm} | {heterogeneity} | Files: {len(h5_files)}")
+                    baseline_results[(dataset, algorithm, heterogeneity)].append(metrics)
     
-    return results
+    return baseline_results, ablation_results
 
 
 def compute_statistics(metrics_list):
@@ -271,7 +296,69 @@ def generate_summary_table(results):
     return df_display
 
 
-def generate_dataset_heterogeneity_tables(results):
+def generate_ablation_tables(ablation_results):
+    """
+    为消融实验的每个数据集和异质性生成单独的表格
+    
+    Args:
+        ablation_results: {(dataset, ablation_config, heterogeneity): [metrics_dict_1, ...]}
+    
+    Returns:
+        dict: {(dataset, heterogeneity): pd.DataFrame}
+              包含消融配置作为行，指标作为列
+    """
+    tables = {}
+    
+    # 获取所有数据集和异质性类型
+    datasets = sorted(set(k[0] for k in ablation_results.keys()))
+    heterogeneities = sorted(set(k[2] for k in ablation_results.keys()))
+    
+    for dataset in datasets:
+        for heterogeneity in heterogeneities:
+            # 过滤当前数据集和异质性的结果
+            filtered_results = {
+                k: v for k, v in ablation_results.items()
+                if k[0] == dataset and k[2] == heterogeneity
+            }
+            
+            if len(filtered_results) == 0:
+                continue
+            
+            rows = []
+            for (_, ablation_config, _), metrics_list in sorted(filtered_results.items()):
+                stats = compute_statistics(metrics_list)
+                
+                if stats is None:
+                    continue
+                
+                row = {
+                    'Ablation_Config': ablation_config,
+                    'Runs': stats.get('accuracy_count', 0)
+                }
+                
+                # 添加各指标
+                for metric in ['accuracy', 'precision', 'recall', 'f1']:
+                    mean_key = f'{metric}_mean'
+                    std_key = f'{metric}_std'
+                    
+                    if mean_key in stats:
+                        mean_val = stats[mean_key]
+                        std_val = stats.get(std_key, 0.0)
+                        row[metric.capitalize()] = format_mean_std(mean_val, std_val)
+                    else:
+                        row[metric.capitalize()] = 'N/A'
+                
+                rows.append(row)
+            
+            if len(rows) > 0:
+                df = pd.DataFrame(rows)
+                df = df.sort_values('Ablation_Config')
+                tables[(dataset, heterogeneity)] = df
+    
+    return tables
+
+
+
     """
     为每个数据集的每种异质性生成单独的表格
     
@@ -349,45 +436,49 @@ def main():
     print(f"\n[INFO] Reading results from: {results_dir}")
     print(f"[INFO] Expected structure: Dataset_Algorithm_Heterogeneity/*.h5\n")
     
-    # 收集所有结果
+    # 收集所有结果（分基线和消融）
     print("[STEP 1] Collecting all experiment results...")
-    results = collect_all_results(str(results_dir))
+    baseline_results, ablation_results = collect_all_results(str(results_dir))
     
-    print(f"\n[INFO] Total experiment configurations: {len(results)}")
+    print(f"\n[INFO] Baseline configurations: {len(baseline_results)}")
+    print(f"[INFO] Ablation configurations: {len(ablation_results)}")
     
-    if len(results) == 0:
+    if len(baseline_results) == 0 and len(ablation_results) == 0:
         print("[ERROR] No valid results found!")
         return
     
-    # 生成汇总表格
-    print("\n[STEP 2] Generating summary table...")
-    summary_df = generate_summary_table(results)
-    
-    # 不再保存CSV文件，只保存XLSX
-    print(f"\n[INFO] Total rows: {len(summary_df)}")
-    
     # 生成按数据集和异质性分组的表格
-    print("\n[STEP 3] Generating dataset-specific tables...")
-    dataset_tables = generate_dataset_heterogeneity_tables(results)
+    print("\n[STEP 2] Generating baseline experiment tables...")
+    baseline_tables = generate_dataset_heterogeneity_tables(baseline_results)
+    print(f"  Generated {len(baseline_tables)} baseline tables")
     
-    # 保存为一个Excel文件，包含多个工作表（按数据集和异质性分组）
+    print("\n[STEP 3] Generating ablation experiment tables...")
+    ablation_tables = generate_ablation_tables(ablation_results)
+    print(f"  Generated {len(ablation_tables)} ablation tables")
+    
+    # 保存为一个Excel文件，包含多个工作表
     print("\n[STEP 4] Generating consolidated Excel file...")
     excel_file = base_dir / 'experiment_results_summary.xlsx'
     
     try:
         with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-            # 首先添加汇总表（所有结果）
-            summary_df.to_excel(writer, sheet_name='Summary', index=False)
-            print(f"  - Added sheet: Summary ({len(summary_df)} configurations)")
+            # ========== 基线实验工作表 ==========
+            if len(baseline_tables) > 0:
+                for (dataset, heterogeneity), df in sorted(baseline_tables.items()):
+                    sheet_name = f'Baseline_{dataset}_{heterogeneity}'
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    print(f"  - Added sheet: {sheet_name} ({len(df)} algorithms)")
             
-            # 然后添加按数据集和异质性分组的工作表
-            for (dataset, heterogeneity), df in sorted(dataset_tables.items()):
-                sheet_name = f'{dataset}_{heterogeneity}'
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-                print(f"  - Added sheet: {sheet_name} ({len(df)} algorithms)")
+            # ========== 消融实验工作表 ==========
+            if len(ablation_tables) > 0:
+                for (dataset, heterogeneity), df in sorted(ablation_tables.items()):
+                    sheet_name = f'Ablation_{dataset}_{heterogeneity}'
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    print(f"  - Added sheet: {sheet_name} ({len(df)} configurations)")
         
         print(f"\n[SUCCESS] Excel file saved to: {excel_file}")
-        print(f"[INFO] Total sheets: {len(dataset_tables) + 1} (1 summary + {len(dataset_tables)} detail sheets)")
+        print(f"[INFO] Total sheets: {len(baseline_tables) + len(ablation_tables)} " +
+              f"({len(baseline_tables)} baseline + {len(ablation_tables)} ablation)")
     except Exception as e:
         print(f"\n[ERROR] Failed to create Excel file: {e}")
         print("[INFO] You may need to install openpyxl: pip install openpyxl")
@@ -397,38 +488,57 @@ def main():
     print("统计摘要")
     print("="*80)
     
-    datasets = summary_df['Dataset'].unique()
-    heterogeneities = summary_df['Heterogeneity'].unique()
-    algorithms = summary_df['Algorithm'].unique()
+    # 基线实验统计
+    if len(baseline_results) > 0:
+        baseline_df = pd.concat([df for df in baseline_tables.values()], ignore_index=True)
+        
+        print("\n【基线实验 (Baseline Experiments)】")
+        datasets = sorted(set(k[0] for k in baseline_results.keys()))
+        heterogeneities = sorted(set(k[2] for k in baseline_results.keys()))
+        algorithms = sorted(set(k[1] for k in baseline_results.keys()))
+        
+        print(f"  数据集: {', '.join(datasets)}")
+        print(f"  异质性类型: {', '.join(heterogeneities)}")
+        print(f"  算法数: {len(algorithms)}")
+        print(f"  总配置数: {len(baseline_results)}")
     
-    print(f"数据集: {', '.join(datasets)} ({len(datasets)} total)")
-    print(f"异质性类型: {', '.join(heterogeneities)} ({len(heterogeneities)} total)")
-    print(f"算法: {len(algorithms)} total")
-    print(f"总实验配置: {len(summary_df)}")
+    # 消融实验统计
+    if len(ablation_results) > 0:
+        ablation_df = pd.concat([df for df in ablation_tables.values()], ignore_index=True)
+        
+        print("\n【消融实验 (Ablation Experiments)】")
+        datasets = sorted(set(k[0] for k in ablation_results.keys()))
+        heterogeneities = sorted(set(k[2] for k in ablation_results.keys()))
+        configs = sorted(set(k[1] for k in ablation_results.keys()))
+        
+        print(f"  数据集: {', '.join(datasets)}")
+        print(f"  异质性类型: {', '.join(heterogeneities)}")
+        print(f"  消融配置数: {len(configs)}")
+        print(f"  总配置数: {len(ablation_results)}")
     
-    # 检查重复次数
-    runs_counts = summary_df['Runs'].value_counts()
-    print(f"\n重复次数分布:")
-    for runs, count in runs_counts.items():
-        print(f"  {runs}次重复: {count} 个配置")
+    # 显示样本数据
+    if len(baseline_tables) > 0:
+        print("\n" + "="*80)
+        print("基线实验示例 (前10行)")
+        print("="*80)
+        first_table = list(baseline_tables.values())[0]
+        print(first_table.head(10).to_string(index=False))
     
-    # 显示前10行示例
-    print("\n" + "="*80)
-    print("结果示例 (前10行)")
-    print("="*80)
-    print(summary_df.head(10).to_string(index=False))
+    if len(ablation_tables) > 0:
+        print("\n" + "="*80)
+        print("消融实验示例 (前10行)")
+        print("="*80)
+        first_table = list(ablation_tables.values())[0]
+        print(first_table.head(10).to_string(index=False))
     
     print("\n" + "="*80)
     print("分析完成！")
     print("="*80)
     print(f"\n生成的文件:")
-    print(f"  experiment_results_summary.xlsx - Excel文件（{len(dataset_tables) + 1}个工作表）")
-    print(f"     包含以下工作表:")
-    print(f"       - Summary (所有{len(summary_df)}个配置)")
-    for dataset in datasets:
-        for heterogeneity in heterogeneities:
-            if (dataset, heterogeneity) in [(d, h) for d, h in dataset_tables.keys()]:
-                print(f"       - {dataset}_{heterogeneity}")
+    print(f"  experiment_results_summary.xlsx")
+    print(f"     包含 {len(baseline_tables) + len(ablation_tables)} 个工作表:")
+    print(f"       - 基线实验: {len(baseline_tables)} 个 (按数据集和异质性分组)")
+    print(f"       - 消融实验: {len(ablation_tables)} 个 (按数据集和异质性分组)")
     print()
 
 

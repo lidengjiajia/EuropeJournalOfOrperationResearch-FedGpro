@@ -261,6 +261,19 @@ for gpu_id in GPU_IDS:
 def _ts():
     return datetime.now().strftime('%H:%M:%S')
 
+def get_algorithm_name_for_config(config_name):
+    """根据消融配置获取实际的算法名称
+    
+    servergpro.py会在save_results时使用self.original_algorithm，
+    这个值在__init__时就从args.algorithm复制过来
+    所以，无论fedgpro_phase2_agg是什么，保存的目录名都基于传入的算法名
+    
+    因此，如果build_command传的是'FedGpro'，结果目录就会是 FedGpro
+    如果传的是'FedGpro-FedAvg'，结果目录就会是 FedGpro-FedAvg
+    """
+    # 返回build_command中传递的算法名
+    return 'FedGpro'
+
 def check_missing_experiments():
     """检查缺失的实验文件"""
     print("\n" + "="*80)
@@ -272,10 +285,13 @@ def check_missing_experiments():
         for hetero in HETEROGENEITY_TYPES.keys():
             for config_name in ABLATION_CONFIGS.keys():
                 # 新的目录结构: 每个实验配置一个独立目录
-                # 目录名格式: {dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero}
-                results_dir = BASE_DIR / 'system' / 'results' / f"{dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero}"
-                # 文件名格式: {dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero}_*.h5
-                file_prefix = f"{dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero}"
+                # 目录名格式: {dataset}_FedGpro_Ablation_{config_name}_{hetero}
+                # 注意: servergpro.py在save_results时使用self.original_algorithm（初始值），
+                # 无论fedgpro_phase2_agg是什么，所以目录名总是基于传入的算法名'FedGpro'
+                algo_name = get_algorithm_name_for_config(config_name)
+                results_dir = BASE_DIR / 'system' / 'results' / f"{dataset}_{algo_name}_Ablation_{config_name}_{hetero}"
+                # 文件名格式: {dataset}_FedGpro_Ablation_{config_name}_{hetero}_*.h5
+                file_prefix = f"{dataset}_{algo_name}_Ablation_{config_name}_{hetero}"
                 
                 if not results_dir.exists():
                     missing.append((dataset, hetero, config_name, 0))
@@ -306,13 +322,15 @@ def build_command(dataset, hetero_type, config_name, gpu_id):
     config = ABLATION_CONFIGS[config_name]
     
     # 新的目录结构: 简洁格式
-    # algorithm会自动设置为FedGpro-FedAvg（或FedGpro-FedProx/FedGpro-Scaffold），main.py会构建完整路径
+    # 🔥 关键修复: 传入 'FedGpro' 而不是 'FedGpro-FedAvg'
+    # servergpro.py会在save_results时使用self.original_algorithm（初始值），
+    # 所以如果传'FedGpro'，保存的目录就是 FedGpro_xxx，不会包含FedAvg/FedProx等
     goal_name = f'Ablation_{config_name}_{hetero_type}'
-    save_folder = f'system/models/{dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero_type}'
+    save_folder = f'system/models/{dataset}_FedGpro_Ablation_{config_name}_{hetero_type}'
     
     cmd = [
         'python', '-u', 'system/main.py',
-        '-data', dataset, '-m', 'credit', '-algo', 'FedGpro-FedAvg',
+        '-data', dataset, '-m', 'credit', '-algo', 'FedGpro',
         '-did', str(gpu_id), '-gr', str(GLOBAL_ROUNDS),
         '-nc', str(params['num_clients']),
         '-ls', str(LOCAL_EPOCHS),
