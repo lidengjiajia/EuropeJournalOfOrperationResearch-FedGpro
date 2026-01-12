@@ -1,0 +1,189 @@
+Warning: FedPAC requires cvxpy. Install with: pip install cvxpy
+Warning: MemReporter requires calmsize. Install with: pip install calmsize
+==================================================
+goal = Ablation_Privacy_Conventional_quantity
+device = cuda
+device_id = 0
+dataset = Uci
+num_classes = 10
+model = credit
+batch_size = 64
+local_learning_rate = 0.007
+learning_rate_decay = False
+learning_rate_decay_gamma = 0.99
+global_rounds = 100
+top_cnt = 100
+local_epochs = 5
+algorithm = FedGpro
+join_ratio = 1.0
+random_join_ratio = False
+num_clients = 10
+prev = 0
+times = 5
+eval_gap = 1
+save_folder_name = system/models/Uci_FedGpro_Ablation_Privacy_Conventional_quantity
+auto_break = False
+dlg_eval = False
+dlg_gap = 100
+batch_num_per_client = 2
+num_new_clients = 0
+fine_tuning_epoch_new = 0
+feature_dim = 512
+vocab_size = 80
+max_len = 200
+few_shot = 0
+client_drop_rate = 0.0
+train_slow_rate = 0.0
+send_slow_rate = 0.0
+time_select = False
+time_threthold = 10000
+beta = 0.0
+lamda = 1.0
+mu = 0.0
+K = 5
+p_learning_rate = 0.01
+M = 5
+itk = 4000
+alphaK = 1.0
+sigma = 1.0
+alpha = 1.0
+plocal_epochs = 1
+tau = 1.0
+fine_tuning_epochs = 10
+dr_learning_rate = 0.0
+L = 1.0
+noise_dim = 512
+generator_learning_rate = 0.005
+hidden_dim = 512
+server_epochs = 1000
+localize_feature_extractor = False
+server_learning_rate = 1.0
+eta = 1.0
+rand_percent = 80
+layer_idx = 2
+mentee_learning_rate = 0.005
+T_start = 0.95
+T_end = 0.98
+momentum = 0.1
+kl_weight = 0.0
+first_stage_bound = 0
+fedcross_alpha = 0.99
+collaberative_model_select_strategy = 1
+fedgpro_phase = 1
+fedgpro_use_vae = True
+fedgpro_use_prototype = True
+fedgpro_epsilon = 10.0
+fedgpro_noise_type = laplace
+fedgpro_delta = 1e-05
+fedgpro_adaptive_noise = False
+fedgpro_adaptive_strategy = balanced
+fedgpro_utility_weight = 1.0
+fedgpro_use_iadp = False
+fedgpro_iadp_alpha = 0.3
+fedgpro_iadp_importance_method = vae_contrast
+fedgpro_iadp_importance_momentum = 0.9
+fedgpro_iadp_privacy_priority = False
+fedgpro_lambda_cls = 10.0
+fedgpro_lambda_recon = 1.0
+fedgpro_lambda_kl = 0.1
+fedgpro_lambda_proto = 0.3
+fedgpro_proto_momentum = 0.95
+fedgpro_latent_dim = None
+fedgpro_vae_lr = 0.001
+fedgpro_proto_align_lr = 0.001
+fedgpro_threshold_min = 0.6
+fedgpro_phase_transition_threshold = 0.7
+fedgpro_phase2_agg = fedavg
+fedgpro_phase2_rounds = 50
+reserved_clients = []
+gwo_alpha_decay = 0.015
+pso_w_max = 0.9
+pso_w_min = 0.4
+pso_c1 = 2.0
+pso_c2 = 2.0
+pso_v_max = 0.5
+cs_f_max = 2.0
+cs_f_min = 0.1
+cs_AP_max = 0.3
+cs_AP_min = 0.1
+==================================================
+
+============= Running time: 0th =============
+Creating server and clients ...
+Warning: Credit dataset Uci should have 2 classes. Auto-correcting from 10 to 2.
+Auto-selected UciCreditNet for dataset Uci
+UciCreditNet(
+  (layers): Sequential(
+    (0): Linear(in_features=23, out_features=32, bias=True)
+    (1): BatchNorm1d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU()
+    (3): Dropout(p=0.4, inplace=False)
+    (4): Linear(in_features=32, out_features=16, bias=True)
+    (5): BatchNorm1d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (6): ReLU()
+    (7): Dropout(p=0.2, inplace=False)
+  )
+  (fc): Linear(in_features=16, out_features=2, bias=True)
+)
+  Client 0: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 1: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 2: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 3: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 4: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 5: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 6: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 7: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 8: Personalization enabled (mu=0.0, plocal_epochs=1)
+  Client 9: Personalization enabled (mu=0.0, plocal_epochs=1)
+
+============================================================
+FedGpro: Federated Global Prototype Learning
+============================================================
+Join ratio / total clients: 1.0 / 10
+
+Phase 1 Parameters (Max 20 rounds):
+  Minimum threshold: 0.6
+  Threshold formula:
+    ACC(t-1) = (best_acc(t-1) + avg_acc(t-1)) / 2
+    threshold(r) = ACC(t-1),                                       if r <= 9
+    threshold(r) = max(0.66, ACC(t-1)*(1-0.05*floor((r-10)/5))), if r >= 10
+  Training stages:
+    - Round 1-10: Forced training (no early stop check, ensure VAE quality)
+    - Round 11+: Early stop check + dynamic threshold with time decay
+  Phase transition: 70% clients qualified OR 25 rounds reached
+
+Phase 2 Parameters:
+  Aggregation: fedavg
+  Supported algorithms: fedavg, fedprox, fedscaffold
+============================================================
+
+Finished creating server and clients.
+
+[Phase 1] Statistical Collection (Round 0)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.6600
+  Best client accuracy (ACC(t)): 0.8427
+  Global average accuracy (ACC(t)): 0.7220
+  Client 0 meets threshold! Generating virtual data...
+  Client 0: Training baseline VAE (reconstruction-only)...
+    Baseline VAE Epoch 10/50, Recon Loss: 0.4839
+    Baseline VAE Epoch 20/50, Recon Loss: 0.4203

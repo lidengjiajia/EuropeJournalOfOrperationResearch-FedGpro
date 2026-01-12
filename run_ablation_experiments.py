@@ -275,46 +275,101 @@ def get_algorithm_name_for_config(config_name):
     return 'FedGpro'
 
 def check_missing_experiments():
-    """检查缺失的实验文件"""
-    print("\n" + "="*80)
-    print("检查缺失的消融实验文件...")
-    print("="*80)
+    """检查缺失的实验文件（支持详细统计）"""
+    print("\n" + "="*100)
+    print("检查消融实验进度")
+    print("="*100)
     
-    missing = []
+    # 统计信息
+    config_stats = {}  # {config_name: {'total': int, 'completed': int, 'missing': int, 'details': [(dataset, hetero, completed)]}}
+    total_needed = 0
+    total_completed = 0
+    total_missing = 0
+    
     for dataset in DATASETS:
         for hetero in HETEROGENEITY_TYPES.keys():
             for config_name in ABLATION_CONFIGS.keys():
-                # 新的目录结构: 每个实验配置一个独立目录
-                # 目录名格式: {dataset}_FedGpro_Ablation_{config_name}_{hetero}
-                # 注意: servergpro.py在save_results时使用self.original_algorithm（初始值），
-                # 无论fedgpro_phase2_agg是什么，所以目录名总是基于传入的算法名'FedGpro'
+                total_needed += 5  # 每个配置需要5次重复
+                
+                # 初始化配置统计
+                if config_name not in config_stats:
+                    config_stats[config_name] = {
+                        'total': 0,
+                        'completed': 0,
+                        'missing': 0,
+                        'details': []
+                    }
+                
+                config_stats[config_name]['total'] += 5
+                
                 algo_name = get_algorithm_name_for_config(config_name)
                 results_dir = BASE_DIR / 'system' / 'results' / f"{dataset}_{algo_name}_Ablation_{config_name}_{hetero}"
-                # 文件名格式: {dataset}_FedGpro_Ablation_{config_name}_{hetero}_*.h5
-                file_prefix = f"{dataset}_{algo_name}_Ablation_{config_name}_{hetero}"
                 
-                if not results_dir.exists():
-                    missing.append((dataset, hetero, config_name, 0))
-                    continue
+                # 查找实际的.h5文件（不管是旧名称还是新名称）
+                # 旧名称: {dataset}_FedGpro-FedAvg_Ablation_{config_name}_{hetero}_*.h5
+                # 新名称: {dataset}_FedGpro_Ablation_{config_name}_{hetero}_*.h5
+                completed = 0
+                if results_dir.exists():
+                    # 统计所有.h5文件（新旧名称都接受）
+                    h5_files = list(results_dir.glob('*.h5'))
+                    completed = len(h5_files)
                 
-                # 查找实际的文件模式
-                completed_files = list(results_dir.glob(f"{file_prefix}_*.h5"))
-                completed = len(completed_files)
+                config_stats[config_name]['completed'] += completed
+                total_completed += completed
                 
                 if completed < 5:
-                    missing.append((dataset, hetero, config_name, completed))
+                    config_stats[config_name]['missing'] += (5 - completed)
+                    total_missing += (5 - completed)
+                
+                config_stats[config_name]['details'].append((dataset, hetero, completed))
     
-    if missing:
-        print(f"\n缺失消融实验数: {len(missing)}")
-        print(f"{'数据集':<10} {'异质性':<10} {'配置':<20} {'已完成/需要'}")
-        print("-" * 80)
-        for dataset, hetero, config, completed in missing:
-            print(f"{dataset:<10} {hetero:<10} {config:<20} {completed}/5")
+    # 打印全局统计
+    print(f"\n【全局统计】")
+    print(f"  需要完成的实验: {total_needed:3d} ({total_needed // 5:2d}个配置 × {len(DATASETS)}个数据集 × {len(HETEROGENEITY_TYPES)}种异质性)")
+    print(f"  已完成的实验: {total_completed:3d} ({total_completed / total_needed * 100:5.1f}%)")
+    print(f"  缺失的实验:   {total_missing:3d} ({total_missing / total_needed * 100:5.1f}%)")
+    
+    # 按配置类型统计
+    print(f"\n【按消融配置分类统计】")
+    print(f"{'配置名称':<30} {'完成':<8} {'总数':<8} {'进度':<8} {'状态'}")
+    print("-" * 100)
+    
+    for config in sorted(config_stats.keys()):
+        stats = config_stats[config]
+        completed = stats['completed']
+        total = stats['total']
+        percent = (completed / total * 100) if total > 0 else 0
+        status = "✅ 完成" if completed == total else f"🔄 进行中" if completed > 0 else "❌ 未开始"
+        print(f"{config:<30} {completed:3d}/{total:3d}  {percent:5.1f}%     {status}")
+    
+    # 详细缺失列表（按配置分组）
+    missing_details = [(d, h, c, comp) for c in sorted(config_stats.keys()) 
+                       for d, h, comp in config_stats[c]['details'] 
+                       if comp < 5]
+    
+    if missing_details:
+        print(f"\n【缺失实验详细列表】")
+        print(f"  共 {len(missing_details)} 个(数据集,异质性)组合需要补充:")
+        print(f"  {'配置':<30} {'数据集':<10} {'异质性':<10} {'已完成/需要':<15} {'操作'}")
+        print("-" * 100)
+        
+        for config, dataset, hetero, completed in missing_details:
+            status = f"{completed}/5"
+            action = f"需要补充 {5-completed} 个" if completed > 0 else "需要全部运行"
+            print(f"  {config:<30} {dataset:<10} {hetero:<10} {status:<15} {action}")
     else:
-        print("\n✅ 所有消融实验均已完成！")
+        print(f"\n✅ 所有消融实验均已完成！")
     
-    print("="*80 + "\n")
-    return missing
+    print("=" * 100 + "\n")
+    
+    # 生成缺失实验列表（供run_experiments使用）
+    missing_list = []
+    for config in sorted(config_stats.keys()):
+        for dataset, hetero, completed in config_stats[config]['details']:
+            if completed < 5:
+                missing_list.append((dataset, hetero, config, completed))
+    
+    return missing_list
 
 def build_command(dataset, hetero_type, config_name, gpu_id):
     """构建运行命令"""

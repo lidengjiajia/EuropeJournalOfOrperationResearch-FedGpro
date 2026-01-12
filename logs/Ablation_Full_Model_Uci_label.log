@@ -1,14 +1,14 @@
 Warning: FedPAC requires cvxpy. Install with: pip install cvxpy
 Warning: MemReporter requires calmsize. Install with: pip install calmsize
 ==================================================
-goal = Ablation_Full_Model_feature
+goal = Ablation_Full_Model_label
 device = cuda
 device_id = 0
 dataset = Uci
 num_classes = 10
 model = credit
 batch_size = 64
-local_learning_rate = 0.005
+local_learning_rate = 0.007
 learning_rate_decay = False
 learning_rate_decay_gamma = 0.99
 global_rounds = 100
@@ -21,7 +21,7 @@ num_clients = 10
 prev = 0
 times = 5
 eval_gap = 1
-save_folder_name = system/models/Uci_FedGpro_Ablation_Full_Model_feature
+save_folder_name = system/models/Uci_FedGpro_Ablation_Full_Model_label
 auto_break = False
 dlg_eval = False
 dlg_gap = 100
@@ -160,95 +160,95 @@ Phase 2 Parameters:
 Finished creating server and clients.
 
 [Phase 1] Statistical Collection (Round 0)
-  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Current threshold (based on ACC(t-1)): 0.6600
-  Best client accuracy (ACC(t)): 0.8400
-  Global average accuracy (ACC(t)): 0.7164
-  Client 3 meets threshold! Generating virtual data...
-  Client 3: Privacy disabled, skipping baseline VAE training.
-  Client 3: Collecting latent distribution from real data...
-    [WARNING] Class 0: ��2/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 0: 2/2250 candidates passed filter (avg confidence: 0.804)
-    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
-  Client 3: Generated 2/2250 high-quality samples (0.1% pass rate, strict threshold=0.80)
-  Client 3: No noise added (privacy disabled).
-  Client 0 meets threshold! Generating virtual data...
-  Client 0: Privacy disabled, skipping baseline VAE training.
-  Client 0: Collecting latent distribution from real data...
-    [OK] Class 0: 1125��������������� (threshold=0.80)
-    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.834)
-    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
-  Client 0: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
-  Client 0: No noise added (privacy disabled).
-  Client 8 meets threshold! Generating virtual data...
-  Client 8: Privacy disabled, skipping baseline VAE training.
-  Client 8: Collecting latent distribution from real data...
-    [WARNING] Class 0: ��728/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 0: 728/2250 candidates passed filter (avg confidence: 0.807)
-    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
-  Client 8: Generated 728/2250 high-quality samples (32.4% pass rate, strict threshold=0.80)
-  Client 8: No noise added (privacy disabled).
-  Client 6 meets threshold! Generating virtual data...
-  Client 6: Privacy disabled, skipping baseline VAE training.
-  Client 6: Collecting latent distribution from real data...
-    [OK] Class 0: 1125��������������� (threshold=0.80)
-    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.892)
-    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
-  Client 6: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
-  Client 6: No noise added (privacy disabled).
+  Best client accuracy (ACC(t)): 0.8427
+  Global average accuracy (ACC(t)): 0.7208
   Client 4 meets threshold! Generating virtual data...
   Client 4: Privacy disabled, skipping baseline VAE training.
   Client 4: Collecting latent distribution from real data...
     [OK] Class 0: 1125��������������� (threshold=0.80)
-    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.867)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.842)
     [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
     Class 1: 0/2250 candidates passed filter (avg confidence: nan)
   Client 4: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
   Client 4: No noise added (privacy disabled).
-  Client 9 meets threshold! Generating virtual data...
-  Client 9: Privacy disabled, skipping baseline VAE training.
-  Client 9: Collecting latent distribution from real data...
-    [OK] Class 0: 1125��������������� (threshold=0.80)
-    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.820)
-    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
-    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
-  Client 9: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
-  Client 9: No noise added (privacy disabled).
   Client 1 meets threshold! Generating virtual data...
   Client 1: Privacy disabled, skipping baseline VAE training.
   Client 1: Collecting latent distribution from real data...
     [OK] Class 0: 1125��������������� (threshold=0.80)
-    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.848)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.884)
     [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
     Class 1: 0/2250 candidates passed filter (avg confidence: nan)
   Client 1: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
   Client 1: No noise added (privacy disabled).
-  Newly qualified clients: [3, 0, 8, 6, 4, 9, 1]
+  Client 8 meets threshold! Generating virtual data...
+  Client 8: Privacy disabled, skipping baseline VAE training.
+  Client 8: Collecting latent distribution from real data...
+    [OK] Class 0: 1125��������������� (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.834)
+    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 8: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 8: No noise added (privacy disabled).
+  Client 3 meets threshold! Generating virtual data...
+  Client 3: Privacy disabled, skipping baseline VAE training.
+  Client 3: Collecting latent distribution from real data...
+    [WARNING] Class 0: ��3/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 0: 3/2250 candidates passed filter (avg confidence: 0.840)
+    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 3: Generated 3/2250 high-quality samples (0.1% pass rate, strict threshold=0.80)
+  Client 3: No noise added (privacy disabled).
+  Client 9 meets threshold! Generating virtual data...
+  Client 9: Privacy disabled, skipping baseline VAE training.
+  Client 9: Collecting latent distribution from real data...
+    [OK] Class 0: 1125��������������� (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.827)
+    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 9: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 9: No noise added (privacy disabled).
+  Client 6 meets threshold! Generating virtual data...
+  Client 6: Privacy disabled, skipping baseline VAE training.
+  Client 6: Collecting latent distribution from real data...
+    [OK] Class 0: 1125��������������� (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.833)
+    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 6: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 6: No noise added (privacy disabled).
+  Client 0 meets threshold! Generating virtual data...
+  Client 0: Privacy disabled, skipping baseline VAE training.
+  Client 0: Collecting latent distribution from real data...
+    [OK] Class 0: 1125��������������� (threshold=0.80)
+    Class 0: 1125/2250 candidates passed filter (avg confidence: 0.840)
+    [WARNING] Class 1: ��0/1125������� (threshold=0.80), ��ȱ���ģ����������������
+    Class 1: 0/2250 candidates passed filter (avg confidence: nan)
+  Client 0: Generated 1125/2250 high-quality samples (50.0% pass rate, strict threshold=0.80)
+  Client 0: No noise added (privacy disabled).
+  Newly qualified clients: [4, 1, 8, 3, 9, 6, 0]
   Total qualified clients: 7/10
-  Virtual data pool size: 6355
+  Virtual data pool size: 6753
 
   [VAE Aggregation] ����ۺ�VAE����...
   [OK] VAE�����ۺ���ɣ��ѷַ��� 10 ���ͻ���
@@ -291,42 +291,42 @@ Round 0 | Phase 1
 ============================================================
 
 Evaluate global model
-Averaged Train Loss: 0.5742
-Averaged Test Accuracy: 0.7164
-Averaged Test AUC: 0.5012
-Averaged Test Precision: 0.6098
-Averaged Test Recall: 0.7164
-Averaged Test F1-Score: 0.6411
-Std Test Accuracy: 0.1231
-Std Test AUC: 0.0371
+Averaged Train Loss: 0.5621
+Averaged Test Accuracy: 0.7208
+Averaged Test AUC: 0.5171
+Averaged Test Precision: 0.6049
+Averaged Test Recall: 0.7208
+Averaged Test F1-Score: 0.6403
+Std Test Accuracy: 0.1264
+Std Test AUC: 0.0438
 ------------------------------------------------------------
-Round 0 time cost: 10.08s
+Round 0 time cost: 10.20s
 ------------------------------------------------------------
 
 [Phase 1] Statistical Collection (Round 1)
-  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Current threshold (based on ACC(t-1)): 0.7782
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7817
   Best client accuracy (ACC(t)): 0.8427
-  Global average accuracy (ACC(t)): 0.7271
+  Global average accuracy (ACC(t)): 0.7212
 
   [VAE Aggregation] ����ۺ�VAE����...
   [OK] VAE�����ۺ���ɣ��ѷַ��� 10 ���ͻ���
@@ -349,42 +349,42 @@ Round 1 | Phase 1
 ============================================================
 
 Evaluate global model
-Averaged Train Loss: 0.5534
-Averaged Test Accuracy: 0.7271
-Averaged Test AUC: 0.5281
-Averaged Test Precision: 0.6030
-Averaged Test Recall: 0.7271
-Averaged Test F1-Score: 0.6486
-Std Test Accuracy: 0.1106
-Std Test AUC: 0.0441
+Averaged Train Loss: 0.5513
+Averaged Test Accuracy: 0.7212
+Averaged Test AUC: 0.5195
+Averaged Test Precision: 0.6060
+Averaged Test Recall: 0.7212
+Averaged Test F1-Score: 0.6468
+Std Test Accuracy: 0.1195
+Std Test AUC: 0.0477
 ------------------------------------------------------------
-Round 1 time cost: 8.57s
+Round 1 time cost: 8.78s
 ------------------------------------------------------------
 
 [Phase 1] Statistical Collection (Round 2)
-  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Current threshold (based on ACC(t-1)): 0.7849
-  Best client accuracy (ACC(t)): 0.8427
-  Global average accuracy (ACC(t)): 0.7365
+  Current threshold (based on ACC(t-1)): 0.7819
+  Best client accuracy (ACC(t)): 0.8400
+  Global average accuracy (ACC(t)): 0.7179
 
   [VAE Aggregation] ����ۺ�VAE����...
   [OK] VAE�����ۺ���ɣ��ѷַ��� 10 ���ͻ���
@@ -407,42 +407,42 @@ Round 2 | Phase 1
 ============================================================
 
 Evaluate global model
-Averaged Train Loss: 0.5564
-Averaged Test Accuracy: 0.7365
-Averaged Test AUC: 0.5545
-Averaged Test Precision: 0.6440
-Averaged Test Recall: 0.7365
-Averaged Test F1-Score: 0.6813
-Std Test Accuracy: 0.0954
-Std Test AUC: 0.0735
+Averaged Train Loss: 0.6189
+Averaged Test Accuracy: 0.7179
+Averaged Test AUC: 0.5247
+Averaged Test Precision: 0.6603
+Averaged Test Recall: 0.7179
+Averaged Test F1-Score: 0.6789
+Std Test Accuracy: 0.1010
+Std Test AUC: 0.0804
 ------------------------------------------------------------
-Round 2 time cost: 8.43s
+Round 2 time cost: 8.57s
 ------------------------------------------------------------
 
 [Phase 1] Statistical Collection (Round 3)
-  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Current threshold (based on ACC(t-1)): 0.7896
-  Best client accuracy (ACC(t)): 0.8360
-  Global average accuracy (ACC(t)): 0.7269
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7789
+  Best client accuracy (ACC(t)): 0.8227
+  Global average accuracy (ACC(t)): 0.7055
 
   [VAE Aggregation] ����ۺ�VAE����...
   [OK] VAE�����ۺ���ɣ��ѷַ��� 10 ���ͻ���
@@ -465,42 +465,42 @@ Round 3 | Phase 1
 ============================================================
 
 Evaluate global model
-Averaged Train Loss: 0.6364
-Averaged Test Accuracy: 0.7269
-Averaged Test AUC: 0.5517
-Averaged Test Precision: 0.6711
-Averaged Test Recall: 0.7269
-Averaged Test F1-Score: 0.6867
-Std Test Accuracy: 0.0903
-Std Test AUC: 0.0872
+Averaged Train Loss: 0.7783
+Averaged Test Accuracy: 0.7055
+Averaged Test AUC: 0.5335
+Averaged Test Precision: 0.6717
+Averaged Test Recall: 0.7055
+Averaged Test F1-Score: 0.6789
+Std Test Accuracy: 0.0830
+Std Test AUC: 0.0881
 ------------------------------------------------------------
-Round 3 time cost: 8.29s
+Round 3 time cost: 8.43s
 ------------------------------------------------------------
 
 [Phase 1] Statistical Collection (Round 4)
-  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Current threshold (based on ACC(t-1)): 0.7815
-  Best client accuracy (ACC(t)): 0.8307
-  Global average accuracy (ACC(t)): 0.7173
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Current threshold (based on ACC(t-1)): 0.7641
+  Best client accuracy (ACC(t)): 0.8120
+  Global average accuracy (ACC(t)): 0.7048
 
   [VAE Aggregation] ����ۺ�VAE����...
   [OK] VAE�����ۺ���ɣ��ѷַ��� 10 ���ͻ���
@@ -523,40 +523,37 @@ Round 4 | Phase 1
 ============================================================
 
 Evaluate global model
-Averaged Train Loss: 0.7499
-Averaged Test Accuracy: 0.7173
-Averaged Test AUC: 0.5584
-Averaged Test Precision: 0.6821
-Averaged Test Recall: 0.7173
-Averaged Test F1-Score: 0.6873
-Std Test Accuracy: 0.0840
-Std Test AUC: 0.0998
+Averaged Train Loss: 0.8936
+Averaged Test Accuracy: 0.7048
+Averaged Test AUC: 0.5507
+Averaged Test Precision: 0.6811
+Averaged Test Recall: 0.7048
+Averaged Test F1-Score: 0.6839
+Std Test Accuracy: 0.0741
+Std Test AUC: 0.0950
 ------------------------------------------------------------
-Round 4 time cost: 8.49s
+Round 4 time cost: 8.39s
 ------------------------------------------------------------
 
 [Phase 1] Statistical Collection (Round 5)
-  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 5: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 5: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 4: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 4: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 3: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 3: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 8: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 8: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 9: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 9: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 0: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 0: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
   Client 6: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
   Client 6: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 2: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 2: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
-  Client 7: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
-  Client 7: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
+  Client 1: [Warm-up Stage] Pretraining classifier on real data (epochs 1-1)
+  Client 1: [Joint Training Stage] VAE + Classifier joint training (epochs 2-5)
 Traceback (most recent call last):
   File "C:\Users\��Ǽ�\Documents\����\С����\���˳�\EuropeJournalOfOrperationResearch-FedGpro\system\main.py", line 824, in <module>
     run(args)
     ~~~^^^^^^
   File "C:\Users\��Ǽ�\Documents\����\С����\���˳�\EuropeJournalOfOrperationResearch-FedGpro\system\main.py", line 561, in run
-    server.train()

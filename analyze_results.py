@@ -358,12 +358,74 @@ def generate_ablation_tables(ablation_results):
     return tables
 
 
+def generate_ablation_tables_by_config(ablation_results):
+    """
+    按消融配置类型分组生成表格（而不是按数据集）
+    
+    Args:
+        ablation_results: {(dataset, ablation_config, heterogeneity): [metrics_dict_1, ...]}
+    
+    Returns:
+        dict: {ablation_config: pd.DataFrame}
+              包含数据集和异质性作为行，指标作为列
+    """
+    tables = {}
+    
+    # 获取所有消融配置
+    ablation_configs = sorted(set(k[1] for k in ablation_results.keys()))
+    
+    for config in ablation_configs:
+        # 过滤当前配置的所有结果（不管数据集和异质性）
+        filtered_results = {
+            k: v for k, v in ablation_results.items()
+            if k[1] == config
+        }
+        
+        if len(filtered_results) == 0:
+            continue
+        
+        rows = []
+        for (dataset, _, heterogeneity), metrics_list in sorted(filtered_results.items()):
+            stats = compute_statistics(metrics_list)
+            
+            if stats is None:
+                continue
+            
+            row = {
+                'Dataset': dataset,
+                'Heterogeneity': heterogeneity,
+                'Runs': stats.get('accuracy_count', 0)
+            }
+            
+            # 添加各指标
+            for metric in ['accuracy', 'precision', 'recall', 'f1']:
+                mean_key = f'{metric}_mean'
+                std_key = f'{metric}_std'
+                
+                if mean_key in stats:
+                    mean_val = stats[mean_key]
+                    std_val = stats.get(std_key, 0.0)
+                    row[metric.capitalize()] = format_mean_std(mean_val, std_val)
+                else:
+                    row[metric.capitalize()] = 'N/A'
+            
+            rows.append(row)
+        
+        if len(rows) > 0:
+            df = pd.DataFrame(rows)
+            # 按数据集和异质性排序
+            df = df.sort_values(['Dataset', 'Heterogeneity'])
+            tables[config] = df
+    
+    return tables
 
+
+def generate_dataset_heterogeneity_tables(baseline_results):
     """
     为每个数据集的每种异质性生成单独的表格
     
     Args:
-        results: {(dataset, algorithm, heterogeneity): [metrics_dict_1, ...]}
+        baseline_results: {(dataset, algorithm, heterogeneity): [metrics_dict_1, ...]}
     
     Returns:
         dict: {(dataset, heterogeneity): pd.DataFrame}
@@ -371,14 +433,14 @@ def generate_ablation_tables(ablation_results):
     tables = {}
     
     # 获取所有数据集和异质性类型
-    datasets = sorted(set(k[0] for k in results.keys()))
-    heterogeneities = sorted(set(k[2] for k in results.keys()))
+    datasets = sorted(set(k[0] for k in baseline_results.keys()))
+    heterogeneities = sorted(set(k[2] for k in baseline_results.keys()))
     
     for dataset in datasets:
         for heterogeneity in heterogeneities:
             # 过滤当前数据集和异质性的结果
             filtered_results = {
-                k: v for k, v in results.items()
+                k: v for k, v in baseline_results.items()
                 if k[0] == dataset and k[2] == heterogeneity
             }
             
@@ -516,6 +578,15 @@ def main():
         print(f"  消融配置数: {len(configs)}")
         print(f"  总配置数: {len(ablation_results)}")
     
+    # 按配置类型分组的消融实验统计
+    print("\n【消融实验按配置类型分类】")
+    ablation_by_config = generate_ablation_tables_by_config(ablation_results)
+    if len(ablation_by_config) > 0:
+        print(f"  检测到 {len(ablation_by_config)} 种消融配置:")
+        for config in sorted(ablation_by_config.keys()):
+            num_rows = len(ablation_by_config[config])
+            print(f"    - {config:<30} ({num_rows} 种数据集/异质性组合)")
+    
     # 显示样本数据
     if len(baseline_tables) > 0:
         print("\n" + "="*80)
@@ -526,10 +597,41 @@ def main():
     
     if len(ablation_tables) > 0:
         print("\n" + "="*80)
-        print("消融实验示例 (前10行)")
+        print("消融实验示例 (按数据集/异质性分组 - 前10行)")
         print("="*80)
         first_table = list(ablation_tables.values())[0]
         print(first_table.head(10).to_string(index=False))
+    
+    # 按配置类型分组的消融实验统计
+    if len(ablation_results) > 0:
+        ablation_tables_by_config = generate_ablation_tables_by_config(ablation_results)
+        
+        print("\n" + "="*80)
+        print("消融实验按配置类型分类统计")
+        print("="*80)
+        
+        print(f"\n【消融配置统计】")
+        print(f"  总消融配置数: {len(ablation_tables_by_config)}")
+        print(f"  每个配置包含: 2个数据集 × 4种异质性 = 8个(数据集,异质性)组合")
+        print(f"  每个组合5次重复 = 40个实验 × 18个配置 = 720次")
+        
+        print(f"\n【各配置实验数据】")
+        print(f"{'配置名称':<30} {'覆盖范围':<40} {'行数'}")
+        print("-" * 80)
+        
+        for config in sorted(ablation_tables_by_config.keys()):
+            df = ablation_tables_by_config[config]
+            datasets = sorted(set(df['Dataset']))
+            heterogeneities = sorted(set(df['Heterogeneity']))
+            coverage = f"{len(datasets)}数据集×{len(heterogeneities)}异质性"
+            print(f"{config:<30} {coverage:<40} {len(df):3d}行")
+        
+        # 显示某个配置的样本数据
+        if len(ablation_tables_by_config) > 0:
+            print(f"\n【Full_Model配置示例】")
+            if 'Full_Model' in ablation_tables_by_config:
+                sample_df = ablation_tables_by_config['Full_Model']
+                print(sample_df.head(10).to_string(index=False))
     
     print("\n" + "="*80)
     print("分析完成！")
