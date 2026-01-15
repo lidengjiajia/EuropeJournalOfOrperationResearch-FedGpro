@@ -596,6 +596,127 @@ def plot_ablation_convergence(ablation_results, base_dir, results_dir):
         print(f"  [Figure] Convergence curve saved: {output_file}.png")
 
 
+def plot_generalization_ablation(ablation_results, base_dir, results_dir):
+    """
+    Plot generalization ability ablation study
+    
+    Compares Full Model vs models with 2/3 reserved clients
+    Shows how well the model generalizes to unseen clients
+    
+    Args:
+        ablation_results: Dictionary of ablation experiment results
+        base_dir: Base directory to save figures
+        results_dir: Directory containing raw result files
+    """
+    figures_dir = base_dir / 'figures'
+    figures_dir.mkdir(exist_ok=True)
+    
+    # Target configurations for generalization study
+    generalization_configs = {
+        'Full_Model': 'Full Model (10 clients)',
+        'Generalization_Reserve_2': 'Reserve 2 Clients',
+        'Generalization_Reserve_3': 'Reserve 3 Clients',
+    }
+    
+    # Color scheme (consistent with other plots)
+    colors = {
+        'Full_Model': '#2E86AB',
+        'Generalization_Reserve_2': '#F18F01', 
+        'Generalization_Reserve_3': '#D32F2F',
+    }
+    
+    linestyles = {
+        'Full_Model': '-',
+        'Generalization_Reserve_2': '--',
+        'Generalization_Reserve_3': '-.',
+    }
+    
+    # Process each dataset
+    for dataset_name in ['Uci', 'Xinwang']:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        convergence_data = {}
+        
+        # Collect data for IID heterogeneity (most stable for generalization comparison)
+        for config, label in generalization_configs.items():
+            key = (dataset_name, config, 'iid')
+            if key not in ablation_results:
+                continue
+            
+            # Read training history from h5 files
+            folder_name = f"{dataset_name}_FedGpro_Ablation_{config}_iid"
+            folder_path = Path(results_dir) / folder_name
+            
+            if not folder_path.exists():
+                continue
+            
+            # Collect accuracy curves from all runs
+            all_accuracies = []
+            h5_files = list(folder_path.glob(f"{dataset_name}_*_iid_*.h5"))
+            
+            for h5_file in h5_files:
+                history = read_training_history(str(h5_file))
+                if history and 'test_acc' in history:
+                    all_accuracies.append(history['test_acc'])
+            
+            if len(all_accuracies) == 0:
+                continue
+            
+            # Calculate mean and std
+            min_length = min(len(acc) for acc in all_accuracies)
+            all_accuracies = [acc[:min_length] for acc in all_accuracies]
+            mean_acc = np.mean(all_accuracies, axis=0)
+            std_acc = np.std(all_accuracies, axis=0)
+            
+            convergence_data[config] = {
+                'mean': mean_acc,
+                'std': std_acc,
+                'label': label
+            }
+        
+        # Plot convergence curves
+        for config in ['Full_Model', 'Generalization_Reserve_2', 'Generalization_Reserve_3']:
+            if config not in convergence_data:
+                continue
+            
+            data = convergence_data[config]
+            mean_acc = data['mean']
+            std_acc = data['std']
+            label = data['label']
+            
+            rounds = np.arange(1, len(mean_acc) + 1)
+            
+            ax.plot(rounds, mean_acc, 
+                    label=label,
+                    color=colors.get(config, '#000000'),
+                    linestyle=linestyles.get(config, '-'),
+                    linewidth=2.5 if config == 'Full_Model' else 2,
+                    alpha=0.9)
+            
+            # Add confidence interval for Full Model
+            if config == 'Full_Model':
+                ax.fill_between(rounds[::5], 
+                               (mean_acc - std_acc)[::5], 
+                               (mean_acc + std_acc)[::5],
+                               color=colors[config],
+                               alpha=0.15)
+        
+        ax.set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Test Accuracy', fontsize=13, fontweight='bold')
+        ax.set_title(f'Generalization Ability Study ({dataset_name} Dataset - IID)', 
+                    fontsize=14, fontweight='bold')
+        ax.legend(loc='lower right', fontsize=11, framealpha=0.9)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.set_xlim(left=1)
+        
+        plt.tight_layout()
+        output_file = figures_dir / f'generalization_ablation_{dataset_name.lower()}'
+        plt.savefig(f'{output_file}.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'{output_file}.pdf', bbox_inches='tight')
+        plt.close()
+        
+        print(f"  [Figure] Generalization curve saved: {output_file}.png")
+
 
 
 def main():
@@ -672,10 +793,13 @@ def main():
             print(f"\n[ERROR] Failed to create ablation Excel: {e}")
             print("[INFO] You may need to install openpyxl: pip install openpyxl")
     
-    # ========== STEP 5: Generate ablation convergence figures ==========
-    print("\n[STEP 5] Generating ablation convergence curves...")
+    # ========== STEP 5: Generate ablation figures ==========
+    print("\n[STEP 5] Generating ablation study figures...")
     if len(ablation_results) > 0:
+        print("  [5.1] Generating component ablation convergence curves...")
         plot_ablation_convergence(ablation_results, base_dir, results_dir)
+        print("  [5.2] Generating generalization ability curves...")
+        plot_generalization_ablation(ablation_results, base_dir, results_dir)
     
     # 显示统计摘要
     print("\n" + "="*80)
@@ -778,8 +902,10 @@ def main():
     print(f"      内容: 8 种消融配置的性能分析")
     print(f"      工作表示例: Uci_feature, Uci_iid, Xinwang_label, ...")
     print(f"\n  [3] figures/")
-    print(f"      - ablation_convergence_uci.png: Uci dataset ablation study")
-    print(f"      - ablation_convergence_xinwang.png: Xinwang dataset ablation study")
+    print(f"      - ablation_convergence_uci.png: Uci component ablation study")
+    print(f"      - ablation_convergence_xinwang.png: Xinwang component ablation study")
+    print(f"      - generalization_ablation_uci.png: Uci generalization ability study")
+    print(f"      - generalization_ablation_xinwang.png: Xinwang generalization ability study")
     print()
 
 

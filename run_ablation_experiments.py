@@ -1,10 +1,11 @@
 """
-联邦学习消融实验批量运行脚本 (优化版)
-特性:
-- 并发执行: 每个GPU同时运行2个实验
-- 智能检测: 打印缺失的实验文件
-- 简化日志: 每20轮打印一次进度
-- 实时监控: 显示每个实验的进度
+Federated Learning Ablation Experiments Runner
+
+Features:
+- Concurrent execution: 2 experiments per GPU
+- Intelligent detection: Print missing experiment files
+- Simplified logging: Print progress every 20 rounds
+- Real-time monitoring: Display experiment progress
 """
 
 import os
@@ -26,27 +27,27 @@ sys.path.insert(0, str(BASE_DIR / 'system'))
 # =============================================================================
 
 DATASETS = ['Uci', 'Xinwang']
-HETEROGENEITY_TYPES = {'feature': '特征异质性', 'label': '标签异质性',
-                       'quantity': '样本数量异质性', 'iid': 'IID均匀分布'}
+HETEROGENEITY_TYPES = {'feature': 'Feature Heterogeneity', 'label': 'Label Heterogeneity',
+                       'quantity': 'Quantity Heterogeneity', 'iid': 'IID Distribution'}
 
 GLOBAL_ROUNDS = 100
 LOCAL_EPOCHS = 5
 
-# GPU自动检测
+# Auto-detect GPUs
 try:
     import torch
     gpu_count = torch.cuda.device_count()
     if gpu_count > 0:
         GPU_IDS = list(range(gpu_count))
-        print(f"检测到 {gpu_count} 个GPU")
+        print(f"Detected {gpu_count} GPU(s)")
         for i in range(gpu_count):
             print(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
     else:
         GPU_IDS = [0]
-        print("未检测到GPU，使用CPU")
+        print("No GPU detected, using CPU")
 except:
     GPU_IDS = [0]
-    print("无法检测GPU，使用默认配置")
+    print("Cannot detect GPU, using default configuration")
 
 SLOTS_PER_GPU = 2
 

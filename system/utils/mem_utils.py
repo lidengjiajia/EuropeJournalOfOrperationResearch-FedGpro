@@ -65,7 +65,7 @@ class MemReporter():
             - the gradients(.grad) of Parameters is not collected, and
             I don't know why.
         """
-        #FIXME: make the grad tensor collected by gc
+        # Gradient tensor collection by GC
         objects = gc.get_objects()
         tensors = [obj for obj in objects if isinstance(obj, torch.Tensor)]
         for t in tensors:
