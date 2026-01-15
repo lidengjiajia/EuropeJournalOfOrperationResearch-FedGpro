@@ -12,60 +12,9 @@ import torchvision
 import logging
 
 from flcore.servers.serveravg import FedAvg
-from flcore.servers.serverpFedMe import pFedMe
-from flcore.servers.serverperavg import PerAvg
 from flcore.servers.serverprox import FedProx
-from flcore.servers.serverfomo import FedFomo
-from flcore.servers.serveramp import FedAMP
-from flcore.servers.servermtl import FedMTL
-from flcore.servers.serverlocal import Local
-from flcore.servers.serverper import FedPer
-from flcore.servers.serverapfl import APFL
-from flcore.servers.serverditto import Ditto
-from flcore.servers.serverrep import FedRep
-from flcore.servers.serverphp import FedPHP
-from flcore.servers.serverbn import FedBN
-from flcore.servers.serverrod import FedROD
 from flcore.servers.serverproto import FedProto
-from flcore.servers.serverdyn import FedDyn
-from flcore.servers.servermoon import MOON
-from flcore.servers.serverbabu import FedBABU
-from flcore.servers.serverapple import APPLE
-from flcore.servers.servergen import FedGen
-from flcore.servers.serverscaffold import SCAFFOLD
-from flcore.servers.serverfd import FD
-from flcore.servers.serverala import FedALA
-try:
-    from flcore.servers.serverpac import FedPAC
-except ImportError:
-    FedPAC = None
-    print("Warning: FedPAC requires cvxpy. Install with: pip install cvxpy")
-from flcore.servers.serverlg import LG_FedAvg
-from flcore.servers.servergc import FedGC
-from flcore.servers.serverfml import FML
-from flcore.servers.serverkd import FedKD
-from flcore.servers.serverpcl import FedPCL
-from flcore.servers.servercp import FedCP
-from flcore.servers.servergpfl import GPFL
-from flcore.servers.serverntd import FedNTD
-from flcore.servers.servergh import FedGH
-from flcore.servers.serverdbe import FedDBE
-from flcore.servers.servercac import FedCAC
-from flcore.servers.serverda import PFL_DA
-from flcore.servers.serverlc import FedLC
-from flcore.servers.serveras import FedAS
-from flcore.servers.servercross import FedCross
-from flcore.servers.servergwo import FedGWO
-from flcore.servers.servertlbo import FedTLBO
-from flcore.servers.serverwoa import FedWOA
-from flcore.servers.serverpso import FedPSO
-from flcore.servers.serverabc import FedABC
-from flcore.servers.serverkf import FedKF
-from flcore.servers.serverfa import FedFA
-from flcore.servers.serverdrplus import FedDrPlus
-from flcore.servers.servertgp import FedTGP
 from flcore.servers.servergpro import FedGpro
-from flcore.servers.servercs import FedCS
 
 from flcore.trainmodel.models import *
 
@@ -107,10 +56,10 @@ def run(args):
         print("Creating server and clients ...")
         start = time.time()
 
-        # Auto-configure num_classes for credit datasets
+        # Auto-configure num_classes for binary classification datasets
         credit_datasets = ['Uci', 'Xinwang', 'GiveMeSomeCredit', 'EuropeCreditCardFraud']
         if args.dataset in credit_datasets and args.num_classes != 2:
-            print(f"Warning: Credit dataset {args.dataset} should have 2 classes. Auto-correcting from {args.num_classes} to 2.")
+            print(f"Warning: Dataset {args.dataset} requires 2 classes. Auto-correcting from {args.num_classes} to 2.")
             args.num_classes = 2
 
         # Auto-configure num_clients from config.json
@@ -315,84 +264,20 @@ def run(args):
                 if '_' in base_algorithm and base_algorithm.startswith('FedGpro_'):
                     base_algorithm = 'FedGpro'
         
-        # Fix algorithm name mapping for consistency
-        # ⚠️ 注意：映射只用于匹配Server类名，不影响文件夹命名
-        # 文件夹命名使用 args.algorithm (原始值)，如 FedPso
-        # 类匹配使用 base_algorithm (映射值)，如 FedPSO
-        algorithm_mapping = {
-            'FedScaffold': 'SCAFFOLD',
-            'FedDitto': 'Ditto',
-            'Per-FedAvg': 'PerAvg',
-            'FedMoon': 'MOON',
-            # 'FedPso': 'FedPSO',  # ❌ 移除：导致文件夹名错误
-            # 'FedGwo': 'FedGWO',  # ❌ 移除：导致文件夹名错误
-            'FedGpro-FedScaffold': 'FedGpro-SCAFFOLD',
-            # 'FedGpro-FedGwo': 'FedGpro-FedGWO',  # ❌ 移除
-            # 'FedGpro-FedPso': 'FedGpro-FedPSO',  # ❌ 移除
-        }
+        # Algorithm name mapping (for backward compatibility)
+        algorithm_mapping = {}
         if base_algorithm in algorithm_mapping:
             base_algorithm = algorithm_mapping[base_algorithm]
         
-        # select algorithm (using base_algorithm for matching)
+        # Select algorithm (using base_algorithm for matching)
         if base_algorithm == "FedAvg":
             args.head = copy.deepcopy(args.model.fc)
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedAvg(args, i)
 
-        elif base_algorithm == "Local":
-            server = Local(args, i)
-
-        elif base_algorithm == "FedMTL":
-            server = FedMTL(args, i)
-
-        elif base_algorithm == "PerAvg":
-            server = PerAvg(args, i)
-
-        elif base_algorithm == "pFedMe":
-            server = pFedMe(args, i)
-
         elif base_algorithm == "FedProx":
             server = FedProx(args, i)
-
-        elif base_algorithm == "FedFomo":
-            server = FedFomo(args, i)
-
-        elif base_algorithm == "FedAMP":
-            server = FedAMP(args, i)
-
-        elif base_algorithm == "APFL":
-            server = APFL(args, i)
-
-        elif base_algorithm == "FedPer":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedPer(args, i)
-
-        elif base_algorithm == "Ditto":
-            server = Ditto(args, i)
-
-        elif base_algorithm == "FedRep":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedRep(args, i)
-
-        elif base_algorithm == "FedPHP":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedPHP(args, i)
-
-        elif base_algorithm == "FedBN":
-            server = FedBN(args, i)
-
-        elif base_algorithm == "FedROD":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedROD(args, i)
 
         elif base_algorithm == "FedProto":
             args.head = copy.deepcopy(args.model.fc)
@@ -400,163 +285,11 @@ def run(args):
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedProto(args, i)
 
-        elif base_algorithm == "FedDyn":
-            server = FedDyn(args, i)
-
-        elif base_algorithm == "MOON":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = MOON(args, i)
-
-        elif base_algorithm == "FedBABU":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedBABU(args, i)
-
-        elif base_algorithm == "APPLE":
-            server = APPLE(args, i)
-
-        elif base_algorithm == "FedGen":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedGen(args, i)
-
-        elif base_algorithm == "SCAFFOLD":
-            server = SCAFFOLD(args, i)
-
-        elif base_algorithm == "FD":
-            server = FD(args, i)
-
-        elif base_algorithm == "FedALA":
-            server = FedALA(args, i)
-
-        elif base_algorithm == "FedPAC":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedPAC(args, i)
-
-        elif base_algorithm == "LG-FedAvg":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = LG_FedAvg(args, i)
-
-        elif base_algorithm == "FedGC":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedGC(args, i)
-
-        elif base_algorithm == "FML":
-            server = FML(args, i)
-
-        elif base_algorithm == "FedKD":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedKD(args, i)
-
-        elif base_algorithm == "FedPCL":
-            args.model.fc = nn.Identity()
-            server = FedPCL(args, i)
-
-        elif base_algorithm == "FedCP":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedCP(args, i)
-
-        elif base_algorithm == "GPFL":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = GPFL(args, i)
-
-        elif base_algorithm == "FedNTD":
-            server = FedNTD(args, i)
-
-        elif base_algorithm == "FedGH":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedGH(args, i)
-
-        elif base_algorithm == "FedDBE":
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedDBE(args, i)
-
-        elif base_algorithm == 'FedCAC':
-            server = FedCAC(args, i)
-
-        elif base_algorithm == 'PFL-DA':
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = PFL_DA(args, i)
-
-        elif base_algorithm == 'FedLC':
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedLC(args, i)
-
-        elif base_algorithm == 'FedAS':
-
-            args.head = copy.deepcopy(args.model.fc)
-            args.model.fc = nn.Identity()
-            args.model = BaseHeadSplit(args.model, args.head)
-            server = FedAS(args, i)
-            
-        elif base_algorithm == "FedCross":
-            server = FedCross(args, i)
-
-        elif base_algorithm == "FedGWO":
-            server = FedGWO(args, i)
-
-        elif base_algorithm == "FedTLBO":
-            server = FedTLBO(args, i)
-
-        elif base_algorithm == "FedGwo":
-            server = FedWOA(args, i)
-
-        elif base_algorithm == "FedPso":
-            server = FedPSO(args, i)
-
-        elif base_algorithm == "FedABC":
-            server = FedABC(args, i)
-
-        elif base_algorithm == "FedKF":
-            server = FedKF(args, i)
-
-        elif base_algorithm == "FedFA":
-            server = FedFA(args, i)
-
-        elif base_algorithm == "FedDrPlus":
-            server = FedDrPlus(args, i)
-
-        elif base_algorithm == "FedTGP":
-            server = FedTGP(args, i)
-
         elif base_algorithm == "FedGpro" or base_algorithm.startswith("FedGpro-"):
-            # FedGpro: Federated Global Prototype Learning
-            # Two-phase federated learning with privacy-preserving virtual data
-            # Supports suffixes like FedGpro_feature, FedGpro_label, FedGpro_iid
-            # Also supports compound algorithms like FedGpro-FedAvg, FedGpro-FedProx, etc.
             server = FedGpro(args, i)
 
-        elif base_algorithm == "FedCS" or base_algorithm.startswith("FedCS-"):
-            # FedCS: Federated Crow Search
-            # Adaptive aggregation based on crow search algorithm
-            server = FedCS(args, i)
-
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"Algorithm '{base_algorithm}' is not implemented")
 
         server.train()
 
@@ -570,18 +303,16 @@ def run(args):
 
     # Auto-generate visualization plots
     if plot_training_results:
-        print("\n生成训练结果可视化...")
-        # 构建正确的子目录路径（匹配serverbase.py的保存格式）
-        # 新格式: {dataset}_{algorithm}_{goal}
+        print("\nGenerating training result visualizations...")
         result_subdir = f"{args.dataset}_{args.algorithm}_{args.goal}"
         for i in range(args.times):
             result_filename = f"{args.dataset}_{args.algorithm}_{args.goal}_{i}.h5"
             try:
                 plot_training_results(result_filename, result_subdir=result_subdir, show_plot=False)
             except Exception as e:
-                print(f"[WARNING] 绘图失败 ({result_filename}): {e}")
+                print(f"[WARNING] Plotting failed ({result_filename}): {e}")
     else:
-        print("\n[WARNING] 跳过可视化生成（matplotlib未安装）")
+        print("\n[WARNING] Skipping visualization (matplotlib not installed)")
 
     print("\nAll done!")
 

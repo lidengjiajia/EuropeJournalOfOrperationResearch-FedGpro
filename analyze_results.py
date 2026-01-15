@@ -464,72 +464,6 @@ def read_training_history(h5_file_path):
     return None
 
 
-def plot_baseline_iid_comparison(baseline_results, base_dir):
-    """
-    Plot baseline algorithm comparison on IID scenario
-    
-    Args:
-        baseline_results: Dictionary of baseline experiment results
-        base_dir: Base directory to save figures
-    """
-    figures_dir = base_dir / 'figures'
-    figures_dir.mkdir(exist_ok=True)
-    
-    # Extract IID results for both datasets
-    datasets = ['Uci', 'Xinwang']
-    algorithms = sorted(VALID_BASELINE_ALGORITHMS)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    
-    colors = ['#2E86AB', '#06A77D', '#A23B72', '#F18F01']
-    
-    for idx, dataset in enumerate(datasets):
-        ax = axes[idx]
-        data_means = []
-        data_stds = []
-        
-        for algo in algorithms:
-            key = (dataset, algo, 'iid')
-            if key in baseline_results:
-                stats = compute_statistics(baseline_results[key])
-                if stats:
-                    data_means.append(stats.get('accuracy_mean', 0) * 100)
-                    data_stds.append(stats.get('accuracy_std', 0) * 100)
-                else:
-                    data_means.append(0)
-                    data_stds.append(0)
-            else:
-                data_means.append(0)
-                data_stds.append(0)
-        
-        x = np.arange(len(algorithms))
-        bars = ax.bar(x, data_means, yerr=data_stds, capsize=5, 
-                     alpha=0.85, color=colors, edgecolor='black', linewidth=1.2)
-        
-        ax.set_xlabel('Algorithm', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Test Accuracy (%)', fontsize=12, fontweight='bold')
-        ax.set_title(f'{dataset} Dataset (IID)', fontsize=13, fontweight='bold')
-        ax.set_xticks(x)
-        ax.set_xticklabels(algorithms, rotation=0, ha='center', fontsize=10)
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
-        ax.set_ylim([0, 100])
-        
-        # Add value labels
-        for bar, mean, std in zip(bars, data_means, data_stds):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + std + 1,
-                   f'{mean:.2f}',
-                   ha='center', va='bottom', fontsize=9, fontweight='bold')
-    
-    plt.tight_layout()
-    output_file = figures_dir / 'baseline_iid_comparison'
-    plt.savefig(f'{output_file}.png', dpi=300, bbox_inches='tight')
-    plt.savefig(f'{output_file}.pdf', bbox_inches='tight')
-    plt.close()
-    
-    print(f"  [Figure] IID comparison saved: {output_file}.png")
-
-
 def plot_ablation_convergence(ablation_results, base_dir, results_dir):
     """
     Plot convergence curves for ablation experiments (accuracy vs. communication rounds)
@@ -738,10 +672,8 @@ def main():
             print(f"\n[ERROR] Failed to create ablation Excel: {e}")
             print("[INFO] You may need to install openpyxl: pip install openpyxl")
     
-    # ========== STEP 5: Generate figures ==========
-    print("\n[STEP 5] Generating experimental figures...")
-    if len(baseline_results) > 0:
-        plot_baseline_iid_comparison(baseline_results, base_dir)
+    # ========== STEP 5: Generate ablation convergence figures ==========
+    print("\n[STEP 5] Generating ablation convergence curves...")
     if len(ablation_results) > 0:
         plot_ablation_convergence(ablation_results, base_dir, results_dir)
     
@@ -846,10 +778,8 @@ def main():
     print(f"      内容: 8 种消融配置的性能分析")
     print(f"      工作表示例: Uci_feature, Uci_iid, Xinwang_label, ...")
     print(f"\n  [3] figures/")
-    print(f"      Experimental figures")
-    print(f"      - baseline_iid_comparison.png: IID scenario performance")
-    print(f"      - ablation_convergence_uci.png: Uci ablation convergence")
-    print(f"      - ablation_convergence_xinwang.png: Xinwang ablation convergence")
+    print(f"      - ablation_convergence_uci.png: Uci dataset ablation study")
+    print(f"      - ablation_convergence_xinwang.png: Xinwang dataset ablation study")
     print()
 
 

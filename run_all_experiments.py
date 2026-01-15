@@ -1,10 +1,11 @@
 """
-联邦学习基准算法批量实验运行脚本 (优化版)
-特性:
-- 并发执行: 每个GPU同时运行2个实验
-- 智能检测: 打印缺失的实验文件
-- 简化日志: 每20轮打印一次进度
-- 实时监控: 显示每个实验的进度
+Federated Learning Baseline Experiments Runner
+
+Features:
+- Concurrent execution: 2 experiments per GPU
+- Intelligent detection: Print missing experiment files
+- Simplified logging: Print progress every 20 rounds
+- Real-time monitoring: Display experiment progress
 """
 
 import os
@@ -19,20 +20,17 @@ from typing import Dict, List, Optional, Any
 from collections import defaultdict
 import re
 
-# 添加system目录到路径
 BASE_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(BASE_DIR / 'system'))
 
 # =============================================================================
-# 配置常量
+# Configuration Constants
 # =============================================================================
 
 DATASETS = ['Uci', 'Xinwang']
-HETEROGENEITY_TYPES = {'feature': '特征异质性', 'label': '标签异质性', 
-                       'quantity': '样本数量异质性', 'iid': 'IID均匀分布'}
-ALGORITHMS = ['FedAvg', 'FedProx', 'FedScaffold', 'FedMoon', 'FedGen',
-              'Per-FedAvg', 'FedDitto', 'FedRep', 'FedProto', 'FedPso', 'FedGwo',
-              'FedGpro']
+HETEROGENEITY_TYPES = {'feature': 'Feature Heterogeneity', 'label': 'Label Heterogeneity', 
+                       'quantity': 'Quantity Heterogeneity', 'iid': 'IID Distribution'}
+ALGORITHMS = ['FedAvg', 'FedProx', 'FedProto', 'FedGpro']
 
 GLOBAL_ROUNDS = 100
 LOCAL_EPOCHS = 5
@@ -42,20 +40,20 @@ try:
     import torch
     if torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
-        GPU_IDS = list(range(num_gpus))  # 自动使用所有GPU
-        print(f"✅ 检测到 {num_gpus} 个GPU: {GPU_IDS}")
+        GPU_IDS = list(range(num_gpus))
+        print(f"✅ Detected {num_gpus} GPU(s): {GPU_IDS}")
         for i in range(num_gpus):
             print(f"   GPU {i}: {torch.cuda.get_device_name(i)}")
     else:
         GPU_IDS = [0]
-        print("⚠️ 未检测到CUDA，使用默认配置 GPU 0")
+        print("⚠️ No CUDA detected, using default GPU 0")
 except:
     GPU_IDS = [0]
-    print("⚠️ 无法检测GPU，使用默认配置 GPU 0")
+    print("⚠️ Cannot detect GPU, using default configuration")
 
 SLOTS_PER_GPU = 2
 
-# 超参数配置
+# Hyperparameter Configuration
 HYPERPARAMETERS = {
     'Uci': {
         'feature': {
