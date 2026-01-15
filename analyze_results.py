@@ -1,15 +1,15 @@
 """
-统计联邦学习实验结果脚本
+Federated Learning Experiment Results Analysis
 
-功能：
-1. 读取system/results目录下所有h5文件
-2. 按数据集(Uci/Xinwang)、算法、异质性类型(feature/label/quantity/iid)分组
-3. 每个实验5次重复，计算均值±标准差
-4. 提取指标：accuracy, precision, recall, f1
-5. 输出CSV文件
+This script processes experimental results from federated learning experiments,
+computing statistics across multiple runs and generating comparative visualizations.
 
-作者：AI Assistant
-日期：2025-12-30
+Key Features:
+- Processes results from system/results directory
+- Groups by dataset (Uci/Xinwang), algorithm, and heterogeneity type
+- Computes mean±std across 5 repeated runs
+- Extracts metrics: accuracy, precision, recall, F1-score
+- Generates Excel reports and convergence plots
 """
 
 import os
@@ -20,31 +20,45 @@ from pathlib import Path
 from collections import defaultdict
 import warnings
 warnings.filterwarnings('ignore')
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = ['DejaVu Sans']
+matplotlib.rcParams['axes.unicode_minus'] = False
+
+# Core baseline algorithms for comparison
+VALID_BASELINE_ALGORITHMS = {
+    'FedAvg',    # Classic federated averaging
+    'FedProx',   # Proximal term regularization
+    'FedProto',  # Prototype-based learning
+    'FedGpro',   # Proposed method
+}
+
+# Ablation study configurations
+ABLATION_CONFIG_MAPPING = {}
+
+VALID_ABLATION_CONFIGS = {
+    'Full_Model',
+    'No_Prototype',
+    'No_VAE_Generation',
+    'Privacy_Epsilon1',
+    'Phase2_FedProx',
+    'Phase2_Scaffold',
+    'Generalization_Reserve_2',
+    'Generalization_Reserve_3',
+}
 
 
 def read_h5_metrics(h5_file_path):
-    """
-    从h5文件读取最终轮次的测试指标
-    
-    Args:
-        h5_file_path: h5文件路径
-    
-    Returns:
-        dict: {'accuracy': float, 'precision': float, 'recall': float, 'f1': float}
-              如果读取失败返回None
-    """
+    """Read final round test metrics from h5 file"""
     try:
         with h5py.File(h5_file_path, 'r') as f:
-            # 读取所有可能的指标键
             metrics = {}
             
-            # 尝试读取测试集指标
             if 'rs_test_acc' in f:
                 test_acc = f['rs_test_acc'][:]
                 if len(test_acc) > 0:
-                    metrics['accuracy'] = float(test_acc[-1])  # 最后一轮的准确率
+                    metrics['accuracy'] = float(test_acc[-1])
             
-            # 尝试读取precision（可能的键名）
             for key in ['rs_test_precision', 'test_precision', 'precision']:
                 if key in f:
                     precision = f[key][:]
@@ -52,7 +66,6 @@ def read_h5_metrics(h5_file_path):
                         metrics['precision'] = float(precision[-1])
                     break
             
-            # 尝试读取recall
             for key in ['rs_test_recall', 'test_recall', 'recall']:
                 if key in f:
                     recall = f[key][:]
@@ -60,7 +73,6 @@ def read_h5_metrics(h5_file_path):
                         metrics['recall'] = float(recall[-1])
                     break
             
-            # 尝试读取f1
             for key in ['rs_test_f1', 'test_f1', 'f1']:
                 if key in f:
                     f1 = f[key][:]
@@ -68,21 +80,17 @@ def read_h5_metrics(h5_file_path):
                         metrics['f1'] = float(f1[-1])
                     break
             
-            # 如果没有找到某些指标，尝试从其他指标计算
             if 'precision' in metrics and 'recall' in metrics and 'f1' not in metrics:
                 p, r = metrics['precision'], metrics['recall']
                 if p + r > 0:
                     metrics['f1'] = 2 * p * r / (p + r)
             
-            # 检查是否至少有accuracy
             if 'accuracy' not in metrics:
-                print(f"  [WARNING] No accuracy found in {os.path.basename(h5_file_path)}")
                 return None
             
             return metrics
     
     except Exception as e:
-        print(f"  [ERROR] Failed to read {os.path.basename(h5_file_path)}: {e}")
         return None
 
 
@@ -131,11 +139,23 @@ def parse_folder_name(folder_name):
         # 消融配置名 = Ablation 后面到 Hetero 前面的所有部分
         ablation_config = '_'.join(parts[3:-1])  # e.g., "Full_Model"
         
+        # 合并重复的消融配置名
+        if ablation_config in ABLATION_CONFIG_MAPPING:
+            ablation_config = ABLATION_CONFIG_MAPPING[ablation_config]
+        
+        # 过滤掉无效的消融配置
+        if ablation_config not in VALID_ABLATION_CONFIGS:
+            return None
+        
         return dataset, algorithm, heterogeneity, is_ablation, ablation_config
     else:
         # 基线实验: Uci_FedAvg_feature
         # 或者: Uci_FedGpro_feature
         algorithm = '_'.join(parts[1:-1])
+        
+        # 过滤掉无效的基线算法（如与本文无关的 FedGwo, FedPso）
+        if algorithm not in VALID_BASELINE_ALGORITHMS:
+            return None
         
         return dataset, algorithm, heterogeneity, is_ablation, None
 
@@ -236,64 +256,6 @@ def format_mean_std(mean, std):
         str: "0.8532±0.0123"
     """
     return f"{mean:.4f}±{std:.4f}"
-
-
-def generate_summary_table(results):
-    """
-    生成汇总表格
-    
-    Args:
-        results: {(dataset, algorithm, heterogeneity): [metrics_dict_1, ...]}
-    
-    Returns:
-        pd.DataFrame: 汇总表格
-    """
-    rows = []
-    
-    for (dataset, algorithm, heterogeneity), metrics_list in sorted(results.items()):
-        stats = compute_statistics(metrics_list)
-        
-        if stats is None:
-            continue
-        
-        row = {
-            'Dataset': dataset,
-            'Algorithm': algorithm,
-            'Heterogeneity': heterogeneity,
-            'Runs': stats.get('accuracy_count', 0)
-        }
-        
-        # 添加各指标的均值±标准差
-        for metric in ['accuracy', 'precision', 'recall', 'f1']:
-            mean_key = f'{metric}_mean'
-            std_key = f'{metric}_std'
-            
-            if mean_key in stats:
-                mean_val = stats[mean_key]
-                std_val = stats.get(std_key, 0.0)
-                row[metric.capitalize()] = format_mean_std(mean_val, std_val)
-                
-                # 同时保存原始数值（用于排序）
-                row[f'{metric}_mean_raw'] = mean_val
-                row[f'{metric}_std_raw'] = std_val
-            else:
-                row[metric.capitalize()] = 'N/A'
-                row[f'{metric}_mean_raw'] = np.nan
-                row[f'{metric}_std_raw'] = np.nan
-        
-        rows.append(row)
-    
-    df = pd.DataFrame(rows)
-    
-    # 按数据集、异质性、算法排序
-    df = df.sort_values(['Dataset', 'Heterogeneity', 'Algorithm'])
-    
-    # 移除原始数值列（仅用于排序）
-    display_columns = ['Dataset', 'Algorithm', 'Heterogeneity', 'Runs', 
-                      'Accuracy', 'Precision', 'Recall', 'F1']
-    df_display = df[display_columns].copy()
-    
-    return df_display
 
 
 def generate_ablation_tables(ablation_results):
@@ -481,6 +443,227 @@ def generate_dataset_heterogeneity_tables(baseline_results):
     return tables
 
 
+def read_training_history(h5_file_path):
+    """
+    从h5文件读取训练过程中每轮的准确率
+    
+    Args:
+        h5_file_path: h5文件路径
+    
+    Returns:
+        numpy.ndarray: 每轮的测试准确率，如果读取失败返回None
+    """
+    try:
+        with h5py.File(h5_file_path, 'r') as f:
+            if 'rs_test_acc' in f:
+                test_acc = f['rs_test_acc'][:]
+                if len(test_acc) > 0:
+                    return test_acc
+    except Exception as e:
+        print(f"  [WARNING] Failed to read training history from {os.path.basename(h5_file_path)}: {e}")
+    return None
+
+
+def plot_baseline_iid_comparison(baseline_results, base_dir):
+    """
+    Plot baseline algorithm comparison on IID scenario
+    
+    Args:
+        baseline_results: Dictionary of baseline experiment results
+        base_dir: Base directory to save figures
+    """
+    figures_dir = base_dir / 'figures'
+    figures_dir.mkdir(exist_ok=True)
+    
+    # Extract IID results for both datasets
+    datasets = ['Uci', 'Xinwang']
+    algorithms = sorted(VALID_BASELINE_ALGORITHMS)
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    colors = ['#2E86AB', '#06A77D', '#A23B72', '#F18F01']
+    
+    for idx, dataset in enumerate(datasets):
+        ax = axes[idx]
+        data_means = []
+        data_stds = []
+        
+        for algo in algorithms:
+            key = (dataset, algo, 'iid')
+            if key in baseline_results:
+                stats = compute_statistics(baseline_results[key])
+                if stats:
+                    data_means.append(stats.get('accuracy_mean', 0) * 100)
+                    data_stds.append(stats.get('accuracy_std', 0) * 100)
+                else:
+                    data_means.append(0)
+                    data_stds.append(0)
+            else:
+                data_means.append(0)
+                data_stds.append(0)
+        
+        x = np.arange(len(algorithms))
+        bars = ax.bar(x, data_means, yerr=data_stds, capsize=5, 
+                     alpha=0.85, color=colors, edgecolor='black', linewidth=1.2)
+        
+        ax.set_xlabel('Algorithm', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Test Accuracy (%)', fontsize=12, fontweight='bold')
+        ax.set_title(f'{dataset} Dataset (IID)', fontsize=13, fontweight='bold')
+        ax.set_xticks(x)
+        ax.set_xticklabels(algorithms, rotation=0, ha='center', fontsize=10)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.set_ylim([0, 100])
+        
+        # Add value labels
+        for bar, mean, std in zip(bars, data_means, data_stds):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + std + 1,
+                   f'{mean:.2f}',
+                   ha='center', va='bottom', fontsize=9, fontweight='bold')
+    
+    plt.tight_layout()
+    output_file = figures_dir / 'baseline_iid_comparison'
+    plt.savefig(f'{output_file}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'{output_file}.pdf', bbox_inches='tight')
+    plt.close()
+    
+    print(f"  [Figure] IID comparison saved: {output_file}.png")
+
+
+def plot_ablation_convergence(ablation_results, base_dir, results_dir):
+    """
+    Plot convergence curves for ablation experiments (accuracy vs. communication rounds)
+    
+    Args:
+        ablation_results: Dictionary of ablation experiment results
+        base_dir: Base directory to save figures
+        results_dir: Directory containing raw result files
+    """
+    figures_dir = base_dir / 'figures'
+    figures_dir.mkdir(exist_ok=True)
+    
+    target_configs = [
+        'Full_Model',
+        'No_Prototype', 
+        'No_VAE_Generation',
+        'Phase2_Scaffold',
+        'Privacy_Epsilon1',
+        'Privacy_Epsilon5',
+        'Privacy_Epsilon10',
+    ]
+    
+    config_labels = {
+        'Full_Model': 'Full Model',
+        'No_Prototype': 'Phase1-NoPrototype',
+        'No_VAE_Generation': 'Phase1-NoVAE',
+        'Phase2_Scaffold': 'Phase2-Scaffold',
+        'Privacy_Epsilon1': 'Privacy-DP(ε=1)',
+        'Privacy_Epsilon5': 'Privacy-DP(ε=5)',
+        'Privacy_Epsilon10': 'Privacy-DP(ε=10)',
+    }
+    
+    # Process both datasets
+    for dataset in ['Uci', 'Xinwang']:
+        convergence_data = {}
+        
+        for config in target_configs:
+            folder_name = f"{dataset}_FedGpro_Ablation_{config}_feature"
+            folder_path = results_dir / folder_name
+            
+            if not folder_path.exists():
+                continue
+            
+            h5_files = sorted([f for f in os.listdir(folder_path) if f.endswith('.h5')])
+            histories = []
+            
+            for h5_file in h5_files:
+                h5_path = folder_path / h5_file
+                history = read_training_history(h5_path)
+                if history is not None:
+                    histories.append(history)
+            
+            if len(histories) > 0:
+                min_length = min(len(h) for h in histories)
+                histories_array = np.array([h[:min_length] for h in histories])
+                mean_history = np.mean(histories_array, axis=0)
+                std_history = np.std(histories_array, axis=0)
+                
+                convergence_data[config] = {
+                    'mean': mean_history,
+                    'std': std_history,
+                    'label': config_labels.get(config, config)
+                }
+        
+        if len(convergence_data) == 0:
+            continue
+        
+        # Plot convergence curves
+        fig, ax = plt.subplots(figsize=(10, 6))
+    
+        colors = {
+            'Full_Model': '#2E86AB',
+            'No_Prototype': '#A23B72',
+            'No_VAE_Generation': '#F18F01',
+            'Phase2_Scaffold': '#06A77D',
+            'Privacy_Epsilon1': '#C73E1D',
+            'Privacy_Epsilon5': '#E63946',
+            'Privacy_Epsilon10': '#F77F00',
+        }
+        
+        linestyles = {
+            'Full_Model': '-',
+            'No_Prototype': '--',
+            'No_VAE_Generation': '--',
+            'Phase2_Scaffold': '-.',
+            'Privacy_Epsilon1': ':',
+            'Privacy_Epsilon5': ':',
+            'Privacy_Epsilon10': ':',
+        }
+        
+        for config in target_configs:
+            if config not in convergence_data:
+                continue
+            
+            data = convergence_data[config]
+            mean_acc = data['mean']
+            std_acc = data['std']
+            label = data['label']
+            
+            rounds = np.arange(1, len(mean_acc) + 1)
+            
+            ax.plot(rounds, mean_acc, 
+                    label=label,
+                    color=colors.get(config, '#000000'),
+                    linestyle=linestyles.get(config, '-'),
+                    linewidth=2.5 if config == 'Full_Model' else 2,
+                    alpha=0.9)
+            
+            if config in ['Full_Model', 'No_Prototype', 'No_VAE_Generation']:
+                ax.fill_between(rounds[::5], 
+                               (mean_acc - std_acc)[::5], 
+                               (mean_acc + std_acc)[::5],
+                               color=colors.get(config, '#000000'),
+                               alpha=0.15)
+        
+        ax.set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+        ax.set_ylabel('Test Accuracy', fontsize=13, fontweight='bold')
+        ax.set_title(f'Ablation Study Convergence ({dataset} Dataset - Feature Heterogeneity)', 
+                    fontsize=14, fontweight='bold')
+        ax.legend(loc='lower right', fontsize=10, framealpha=0.9)
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.set_xlim(left=1)
+        
+        plt.tight_layout()
+        output_file = figures_dir / f'ablation_convergence_{dataset.lower()}'
+        plt.savefig(f'{output_file}.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'{output_file}.pdf', bbox_inches='tight')
+        plt.close()
+        
+        print(f"  [Figure] Convergence curve saved: {output_file}.png")
+
+
+
+
 def main():
     """主函数"""
     print("="*80)
@@ -496,7 +679,9 @@ def main():
         return
     
     print(f"\n[INFO] Reading results from: {results_dir}")
-    print(f"[INFO] Expected structure: Dataset_Algorithm_Heterogeneity/*.h5\n")
+    print(f"[INFO] Expected structure: Dataset_Algorithm_Heterogeneity/*.h5")
+    print(f"[INFO] Valid baseline algorithms: {sorted(VALID_BASELINE_ALGORITHMS)}")
+    print(f"[INFO] Valid ablation configs: {sorted(VALID_ABLATION_CONFIGS)}\n")
     
     # 收集所有结果（分基线和消融）
     print("[STEP 1] Collecting all experiment results...")
@@ -518,32 +703,47 @@ def main():
     ablation_tables = generate_ablation_tables(ablation_results)
     print(f"  Generated {len(ablation_tables)} ablation tables")
     
-    # 保存为一个Excel文件，包含多个工作表
-    print("\n[STEP 4] Generating consolidated Excel file...")
-    excel_file = base_dir / 'experiment_results_summary.xlsx'
+    # 保存为两个独立的Excel文件
+    print("\n[STEP 4] Generating separate Excel files...")
     
-    try:
-        with pd.ExcelWriter(excel_file, engine='openpyxl') as writer:
-            # ========== 基线实验工作表 ==========
-            if len(baseline_tables) > 0:
+    # ========== 基线实验Excel文件 ==========
+    baseline_excel = base_dir / 'baseline_experiments.xlsx'
+    if len(baseline_tables) > 0:
+        try:
+            with pd.ExcelWriter(baseline_excel, engine='openpyxl') as writer:
                 for (dataset, heterogeneity), df in sorted(baseline_tables.items()):
-                    sheet_name = f'Baseline_{dataset}_{heterogeneity}'
+                    sheet_name = f'{dataset}_{heterogeneity}'
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
-                    print(f"  - Added sheet: {sheet_name} ({len(df)} algorithms)")
+                    print(f"  [Baseline] Added sheet: {sheet_name} ({len(df)} algorithms)")
             
-            # ========== 消融实验工作表 ==========
-            if len(ablation_tables) > 0:
+            print(f"\n[SUCCESS] Baseline Excel saved to: {baseline_excel}")
+            print(f"[INFO] Total baseline sheets: {len(baseline_tables)}")
+        except Exception as e:
+            print(f"\n[ERROR] Failed to create baseline Excel: {e}")
+            print("[INFO] You may need to install openpyxl: pip install openpyxl")
+    
+    # ========== 消融实验Excel文件 ==========
+    ablation_excel = base_dir / 'ablation_experiments.xlsx'
+    if len(ablation_tables) > 0:
+        try:
+            with pd.ExcelWriter(ablation_excel, engine='openpyxl') as writer:
                 for (dataset, heterogeneity), df in sorted(ablation_tables.items()):
-                    sheet_name = f'Ablation_{dataset}_{heterogeneity}'
+                    sheet_name = f'{dataset}_{heterogeneity}'
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
-                    print(f"  - Added sheet: {sheet_name} ({len(df)} configurations)")
-        
-        print(f"\n[SUCCESS] Excel file saved to: {excel_file}")
-        print(f"[INFO] Total sheets: {len(baseline_tables) + len(ablation_tables)} " +
-              f"({len(baseline_tables)} baseline + {len(ablation_tables)} ablation)")
-    except Exception as e:
-        print(f"\n[ERROR] Failed to create Excel file: {e}")
-        print("[INFO] You may need to install openpyxl: pip install openpyxl")
+                    print(f"  [Ablation] Added sheet: {sheet_name} ({len(df)} configurations)")
+            
+            print(f"\n[SUCCESS] Ablation Excel saved to: {ablation_excel}")
+            print(f"[INFO] Total ablation sheets: {len(ablation_tables)}")
+        except Exception as e:
+            print(f"\n[ERROR] Failed to create ablation Excel: {e}")
+            print("[INFO] You may need to install openpyxl: pip install openpyxl")
+    
+    # ========== STEP 5: Generate figures ==========
+    print("\n[STEP 5] Generating experimental figures...")
+    if len(baseline_results) > 0:
+        plot_baseline_iid_comparison(baseline_results, base_dir)
+    if len(ablation_results) > 0:
+        plot_ablation_convergence(ablation_results, base_dir, results_dir)
     
     # 显示统计摘要
     print("\n" + "="*80)
@@ -634,13 +834,22 @@ def main():
                 print(sample_df.head(10).to_string(index=False))
     
     print("\n" + "="*80)
-    print("分析完成！")
+    print("Analysis Complete")
     print("="*80)
     print(f"\n生成的文件:")
-    print(f"  experiment_results_summary.xlsx")
-    print(f"     包含 {len(baseline_tables) + len(ablation_tables)} 个工作表:")
-    print(f"       - 基线实验: {len(baseline_tables)} 个 (按数据集和异质性分组)")
-    print(f"       - 消融实验: {len(ablation_tables)} 个 (按数据集和异质性分组)")
+    print(f"\n  [1] baseline_experiments.xlsx")
+    print(f"      包含 {len(baseline_tables)} 个工作表 (按数据集和异质性分组)")
+    print(f"      内容: 4 种核心基线算法的性能对比")
+    print(f"      工作表示例: Uci_feature, Uci_iid, Xinwang_label, ...")
+    print(f"\n  [2] ablation_experiments.xlsx")
+    print(f"      包含 {len(ablation_tables)} 个工作表 (按数据集和异质性分组)")
+    print(f"      内容: 8 种消融配置的性能分析")
+    print(f"      工作表示例: Uci_feature, Uci_iid, Xinwang_label, ...")
+    print(f"\n  [3] figures/")
+    print(f"      Experimental figures")
+    print(f"      - baseline_iid_comparison.png: IID scenario performance")
+    print(f"      - ablation_convergence_uci.png: Uci ablation convergence")
+    print(f"      - ablation_convergence_xinwang.png: Xinwang ablation convergence")
     print()
 
 
