@@ -6,7 +6,12 @@ import copy
 import time
 import random
 from utils.data_utils import read_client_data
-from utils.dlg import DLG
+
+# DLG (Deep Leakage from Gradients) is optional for privacy attack evaluation
+try:
+    from utils.dlg import DLG
+except ImportError:
+    DLG = None
 
 
 class Server(object):

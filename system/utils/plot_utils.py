@@ -1,140 +1,202 @@
 """
-绘图工具函数
-用于训练完成后自动生成结果可视化图表
+Modern academic-style plotting utilities for federated learning experiments
+
+Features:
+- Consistent color schemes across all plots
+- Clean, publication-ready visualizations
+- Automatic result analysis and visualization
 """
 
 import h5py
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # 使用非交互式后端，适合服务器环境
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+# Modern academic style configuration
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.facecolor'] = 'white'
+plt.rcParams['axes.edgecolor'] = '#333333'
+plt.rcParams['axes.linewidth'] = 1.2
+plt.rcParams['grid.alpha'] = 0.3
+plt.rcParams['grid.linestyle'] = '--'
+plt.rcParams['grid.linewidth'] = 0.8
+
+# Consistent color palette (matching analyze_results.py)
+COLORS = {
+    'primary': '#2E86AB',      # Blue
+    'secondary': '#F18F01',    # Orange
+    'tertiary': '#A23B72',     # Purple
+    'quaternary': '#6A994E',   # Green
+    'quinary': '#D32F2F',      # Red
+    'success': '#06A77D',      # Teal
+    'danger': '#C73E1D',       # Dark Red
+}
 
 
-def plot_training_results(result_file, result_subdir=None, show_plot=False):
+def plot_training_results(result_file, result_subdir=None, show_plot=False, output_dir='figures'):
     """
-    自动绘制训练结果并保存到results目录
+    Generate publication-quality training result visualizations
     
     Args:
-        result_file: 结果文件名，如 'Uci_FedGWO_test_0.h5'
-        result_subdir: 结果子目录，如 'Uci_FedGWO_feature'
-        show_plot: 是否显示图表（服务器环境建议False）
+        result_file: Result filename, e.g., 'Uci_FedGpro_iid_0.h5'
+        result_subdir: Result subdirectory, e.g., 'Uci_FedGpro_iid'
+        show_plot: Whether to display the plot (recommended False for servers)
+        output_dir: Output directory name ('figures' or 'results'), default: 'figures'
     
     Returns:
-        output_path: 保存的图片路径
-    """
-    # 获取正确的结果目录路径
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    results_base = os.path.join(os.path.dirname(current_dir), "results")
+        output_path: Path to the saved figure
     
-    # 构建完整路径（包含子目录）
+    Example:
+        >>> plot_training_results('Uci_FedGpro_iid_0.h5', 'Uci_FedGpro_iid')
+        # Saves to: figures/Uci_FedGpro_iid_0_plot.png
+    """
+    # Construct result path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    system_dir = os.path.dirname(current_dir)
+    project_root = os.path.dirname(system_dir)
+    results_base = os.path.join(system_dir, "results")
+    
     if result_subdir:
         result_path = os.path.join(results_base, result_subdir, result_file)
     else:
-        # 兼容旧的调用方式
         result_path = os.path.join(results_base, result_file)
     
     if not os.path.exists(result_path):
-        print(f"⚠️  结果文件不存在: {result_path}")
+        print(f"[WARNING] Result file not found: {result_path}")
         return None
     
     try:
-        # 读取数据
+        # Load data
         with h5py.File(result_path, 'r') as f:
             test_acc = np.array(f['rs_test_acc'])
             test_auc = np.array(f.get('rs_test_auc', []))
             train_loss = np.array(f['rs_train_loss'])
         
-        # 检查数据有效性
+        # Validate data
         if len(test_acc) == 0:
-            print(f"⚠️  数据为空: {result_path}")
+            print(f"[WARNING] Empty data: {result_path}")
             return None
         
         has_auc = len(test_auc) > 0
+        rounds = np.arange(1, len(test_acc) + 1)
         
-        # 创建图表
-        fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+        # Create figure with modern style
+        fig, axes = plt.subplots(1, 3, figsize=(18, 5.5))
+        fig.patch.set_facecolor('white')
         
-        # 1. 准确率曲线
+        # ========== Plot 1: Test Accuracy ==========
         ax1 = axes[0]
-        ax1.plot(test_acc, linewidth=2, color='#2E86AB')
-        ax1.set_title('Test Accuracy', fontsize=14, fontweight='bold')
-        ax1.set_xlabel('Round', fontsize=12)
-        ax1.set_ylabel('Accuracy', fontsize=12)
-        ax1.grid(True, alpha=0.3)
-        ax1.axhline(y=test_acc.max(), color='r', linestyle='--', alpha=0.5, 
-                    label=f'Max: {test_acc.max():.4f}')
-        ax1.legend()
+        ax1.plot(rounds, test_acc, linewidth=2.5, color=COLORS['primary'], 
+                alpha=0.9, label='Test Accuracy')
         
-        # 2. 损失曲线
+        # Highlight max accuracy
+        max_idx = test_acc.argmax()
+        ax1.scatter([rounds[max_idx]], [test_acc[max_idx]], 
+                   color=COLORS['danger'], s=100, zorder=5, 
+                   label=f'Peak: {test_acc.max():.4f} (R{rounds[max_idx]})')
+        
+        # Add confidence band (simple smoothing)
+        if len(test_acc) > 10:
+            window = min(5, len(test_acc) // 10)
+            smoothed = np.convolve(test_acc, np.ones(window)/window, mode='same')
+            ax1.fill_between(rounds, test_acc, smoothed, alpha=0.1, color=COLORS['primary'])
+        
+        ax1.set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+        ax1.set_ylabel('Test Accuracy', fontsize=13, fontweight='bold')
+        ax1.set_title('Test Accuracy Convergence', fontsize=14, fontweight='bold', pad=15)
+        ax1.legend(loc='lower right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+        ax1.grid(True, alpha=0.3, linestyle='--')
+        ax1.set_xlim(left=1)
+        
+        # ========== Plot 2: Training Loss ==========
         ax2 = axes[1]
-        ax2.plot(train_loss, linewidth=2, color='#F18F01')
-        ax2.set_title('Training Loss', fontsize=14, fontweight='bold')
-        ax2.set_xlabel('Round', fontsize=12)
-        ax2.set_ylabel('Loss', fontsize=12)
-        ax2.grid(True, alpha=0.3)
-        ax2.axhline(y=train_loss.min(), color='r', linestyle='--', alpha=0.5,
-                    label=f'Min: {train_loss.min():.4f}')
-        ax2.legend()
+        ax2.plot(rounds, train_loss, linewidth=2.5, color=COLORS['secondary'], 
+                alpha=0.9, label='Training Loss')
         
-        # 3. 收敛分析（适用于GWO等优化算法）
+        # Highlight min loss
+        min_idx = train_loss.argmin()
+        ax2.scatter([rounds[min_idx]], [train_loss[min_idx]], 
+                   color=COLORS['success'], s=100, zorder=5,
+                   label=f'Min: {train_loss.min():.4f} (R{rounds[min_idx]})')
+        
+        ax2.set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+        ax2.set_ylabel('Training Loss', fontsize=13, fontweight='bold')
+        ax2.set_title('Training Loss Convergence', fontsize=14, fontweight='bold', pad=15)
+        ax2.legend(loc='upper right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+        ax2.grid(True, alpha=0.3, linestyle='--')
+        ax2.set_xlim(left=1)
+        
+        # ========== Plot 3: Performance Metrics ==========
         ax3 = axes[2]
-        rounds = np.arange(len(test_acc))
         
-        # 如果是FedGWO，绘制收敛因子a
-        if 'GWO' in result_file or 'gwo' in result_file.lower():
-            a_values = 2 - 2 * rounds / max(len(test_acc) - 1, 1)
-            ax3.plot(a_values, linewidth=2, color='#6A994E')
-            ax3.set_title('GWO Convergence Factor (a)', fontsize=14, fontweight='bold')
-            ax3.set_ylabel('Factor a', fontsize=12)
-            ax3.axhline(y=1.0, color='orange', linestyle='--', alpha=0.5,
-                        label='Exploration/Exploitation (a=1)')
-            ax3.fill_between(rounds, 0, a_values, where=(a_values > 1), 
-                             alpha=0.2, color='blue', label='Exploration')
-            ax3.fill_between(rounds, 0, a_values, where=(a_values <= 1), 
-                             alpha=0.2, color='green', label='Exploitation')
-        else:
-            # 其他算法绘制准确率提升曲线
-            acc_improvement = np.diff(test_acc, prepend=test_acc[0])
-            ax3.plot(acc_improvement, linewidth=2, color='#A23B72')
-            ax3.set_title('Accuracy Improvement', fontsize=14, fontweight='bold')
-            ax3.set_ylabel('Δ Accuracy', fontsize=12)
-            ax3.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
+        # Calculate improvement rate (smoothed derivative)
+        acc_improvement = np.diff(test_acc, prepend=test_acc[0])
         
-        ax3.set_xlabel('Round', fontsize=12)
-        ax3.grid(True, alpha=0.3)
-        ax3.legend()
+        # Plot improvement
+        ax3.plot(rounds, acc_improvement, linewidth=2, color=COLORS['tertiary'], 
+                alpha=0.8, label='Accuracy Δ')
+        ax3.axhline(y=0, color='#666666', linestyle='-', alpha=0.4, linewidth=1)
+        
+        # Highlight convergence regions
+        ax3.fill_between(rounds, 0, acc_improvement, 
+                        where=(acc_improvement > 0), 
+                        alpha=0.2, color=COLORS['success'], 
+                        label='Improving')
+        ax3.fill_between(rounds, 0, acc_improvement, 
+                        where=(acc_improvement <= 0), 
+                        alpha=0.2, color=COLORS['danger'], 
+                        label='Declining')
+        
+        ax3.set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+        ax3.set_ylabel('Accuracy Change (Δ)', fontsize=13, fontweight='bold')
+        ax3.set_title('Learning Dynamics', fontsize=14, fontweight='bold', pad=15)
+        ax3.legend(loc='upper right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+        ax3.grid(True, alpha=0.3, linestyle='--')
+        ax3.set_xlim(left=1)
         
         plt.tight_layout()
         
-        # 生成输出文件名（保存在同一子目录下）
+        # Save figure to specified directory
         base_name = os.path.splitext(result_file)[0]
-        if result_subdir:
-            output_path = os.path.join(results_base, result_subdir, f'{base_name}_plot.png')
+        
+        if output_dir == 'figures':
+            # Save to project figures directory
+            figures_dir = os.path.join(project_root, 'figures')
+            os.makedirs(figures_dir, exist_ok=True)
+            output_path = os.path.join(figures_dir, f'{base_name}_plot.png')
+            output_pdf = os.path.join(figures_dir, f'{base_name}_plot.pdf')
         else:
-            output_path = os.path.join(results_base, f'{base_name}_plot.png')
+            # Save to results subdirectory (original behavior)
+            if result_subdir:
+                output_path = os.path.join(results_base, result_subdir, f'{base_name}_plot.png')
+            else:
+                output_path = os.path.join(results_base, f'{base_name}_plot.png')
+            output_pdf = None
         
-        # 保存图表
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        print(f"✅ 训练结果可视化已保存: {output_path}")
+        plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+        if output_pdf:
+            plt.savefig(output_pdf, bbox_inches='tight', facecolor='white')
+            print(f"[SUCCESS] Training visualization saved: {output_path} & {output_pdf}")
+        else:
+            print(f"[SUCCESS] Training visualization saved: {output_path}")
         
-        # 打印统计信息
+        # Print statistics
         print("\n" + "="*70)
-        print("📊 训练结果统计")
+        print("Training Results Summary")
         print("="*70)
-        print(f"  最大准确率: {test_acc.max():.4f} @ Round {test_acc.argmax()}")
+        print(f"  Peak Accuracy:   {test_acc.max():.4f} @ Round {test_acc.argmax() + 1}")
         if has_auc:
-            print(f"  最大AUC: {test_auc.max():.4f} @ Round {test_auc.argmax()}")
-        print(f"  最小损失: {train_loss.min():.4f} @ Round {train_loss.argmin()}")
-        print(f"  最终准确率: {test_acc[-1]:.4f}")
+            print(f"  Peak AUC:        {test_auc.max():.4f} @ Round {test_auc.argmax() + 1}")
+        print(f"  Min Loss:        {train_loss.min():.4f} @ Round {train_loss.argmin() + 1}")
+        print(f"  Final Accuracy:  {test_acc[-1]:.4f}")
         if has_auc:
-            print(f"  最终AUC: {test_auc[-1]:.4f}")
-        print(f"  最终损失: {train_loss[-1]:.4f}")
-        print(f"  总训练轮数: {len(test_acc)}")
+            print(f"  Final AUC:       {test_auc[-1]:.4f}")
+        print(f"  Final Loss:      {train_loss[-1]:.4f}")
+        print(f"  Total Rounds:    {len(test_acc)}")
         print("="*70)
         
         if show_plot:
@@ -145,27 +207,50 @@ def plot_training_results(result_file, result_subdir=None, show_plot=False):
         return output_path
         
     except Exception as e:
-        print(f"❌ 绘图失败: {e}")
+        print(f"[ERROR] Plotting failed: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 
-def compare_algorithms(result_files, algorithms, output_path='results/algorithm_comparison.png'):
+def compare_algorithms(result_files, algorithms, output_name='algorithm_comparison', output_dir='figures'):
     """
-    对比多个算法的性能
+    Generate publication-quality algorithm comparison visualizations
     
     Args:
-        result_files: 结果文件列表
-        algorithms: 算法名称列表
-        output_path: 输出图片路径
+        result_files: List of result file paths (full paths to .h5 files)
+        algorithms: List of algorithm names
+        output_name: Output filename (without extension), default: 'algorithm_comparison'
+        output_dir: Output directory ('figures' or specify custom path)
+    
+    Returns:
+        output_path: Path to the saved comparison figure
+    
+    Example:
+        >>> files = [
+        ...     'system/results/Uci_FedAvg_iid/Uci_FedAvg_iid_0.h5',
+        ...     'system/results/Uci_FedProx_iid/Uci_FedProx_iid_0.h5',
+        ...     'system/results/Uci_FedGpro_iid/Uci_FedGpro_iid_0.h5'
+        ... ]
+        >>> compare_algorithms(files, ['FedAvg', 'FedProx', 'FedGpro'])
+        # Saves to: figures/algorithm_comparison.png
     """
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
-    colors = ['#2E86AB', '#A23B72', '#F18F01', '#6A994E', '#C73E1D']
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5.5))
+    fig.patch.set_facecolor('white')
+    
+    # Consistent color palette
+    color_palette = [
+        COLORS['primary'], COLORS['secondary'], COLORS['tertiary'], 
+        COLORS['quaternary'], COLORS['quinary'], COLORS['success'], 
+        COLORS['danger']
+    ]
+    
+    # Line styles for better distinction
+    line_styles = ['-', '--', '-.', ':', '-', '--', '-.']
     
     for i, (file, algo) in enumerate(zip(result_files, algorithms)):
         if not os.path.exists(file):
-            print(f"⚠️  文件不存在: {file}")
+            print(f"[WARNING] File not found: {file}")
             continue
             
         try:
@@ -174,43 +259,70 @@ def compare_algorithms(result_files, algorithms, output_path='results/algorithm_
                 test_auc = np.array(f.get('rs_test_auc', []))
                 train_loss = np.array(f['rs_train_loss'])
             
-            color = colors[i % len(colors)]
+            rounds = np.arange(1, len(test_acc) + 1)
+            color = color_palette[i % len(color_palette)]
+            linestyle = line_styles[i % len(line_styles)]
             
-            # 准确率对比
-            axes[0].plot(test_acc, linewidth=2, color=color, label=algo)
+            # Accuracy comparison
+            axes[0].plot(rounds, test_acc, linewidth=2.5, color=color, 
+                        linestyle=linestyle, label=algo, alpha=0.85)
             
-            # AUC对比（如果有）
+            # AUC comparison (if available)
             if len(test_auc) > 0:
-                axes[1].plot(test_auc, linewidth=2, color=color, label=algo)
+                axes[1].plot(rounds, test_auc, linewidth=2.5, color=color, 
+                           linestyle=linestyle, label=algo, alpha=0.85)
             
-            # 损失对比
-            axes[2].plot(train_loss, linewidth=2, color=color, label=algo)
+            # Loss comparison
+            axes[2].plot(rounds, train_loss, linewidth=2.5, color=color, 
+                        linestyle=linestyle, label=algo, alpha=0.85)
             
         except Exception as e:
-            print(f"⚠️  读取失败 {file}: {e}")
+            print(f"[WARNING] Failed to read {file}: {e}")
             continue
     
-    axes[0].set_title('Test Accuracy Comparison', fontsize=14, fontweight='bold')
-    axes[0].set_xlabel('Round', fontsize=12)
-    axes[0].set_ylabel('Accuracy', fontsize=12)
-    axes[0].legend()
-    axes[0].grid(True, alpha=0.3)
+    # ========== Configure Accuracy Plot ==========
+    axes[0].set_title('Test Accuracy Comparison', fontsize=14, fontweight='bold', pad=15)
+    axes[0].set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+    axes[0].set_ylabel('Test Accuracy', fontsize=13, fontweight='bold')
+    axes[0].legend(loc='lower right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+    axes[0].grid(True, alpha=0.3, linestyle='--')
+    axes[0].set_xlim(left=1)
     
-    axes[1].set_title('Test AUC Comparison', fontsize=14, fontweight='bold')
-    axes[1].set_xlabel('Round', fontsize=12)
-    axes[1].set_ylabel('AUC', fontsize=12)
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
+    # ========== Configure AUC Plot ==========
+    axes[1].set_title('Test AUC Comparison', fontsize=14, fontweight='bold', pad=15)
+    axes[1].set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+    axes[1].set_ylabel('Test AUC', fontsize=13, fontweight='bold')
+    axes[1].legend(loc='lower right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+    axes[1].grid(True, alpha=0.3, linestyle='--')
+    axes[1].set_xlim(left=1)
     
-    axes[2].set_title('Training Loss Comparison', fontsize=14, fontweight='bold')
-    axes[2].set_xlabel('Round', fontsize=12)
-    axes[2].set_ylabel('Loss', fontsize=12)
-    axes[2].legend()
-    axes[2].grid(True, alpha=0.3)
+    # ========== Configure Loss Plot ==========
+    axes[2].set_title('Training Loss Comparison', fontsize=14, fontweight='bold', pad=15)
+    axes[2].set_xlabel('Communication Rounds', fontsize=13, fontweight='bold')
+    axes[2].set_ylabel('Training Loss', fontsize=13, fontweight='bold')
+    axes[2].legend(loc='upper right', fontsize=10, framealpha=0.9, edgecolor='#CCCCCC')
+    axes[2].grid(True, alpha=0.3, linestyle='--')
+    axes[2].set_xlim(left=1)
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✅ 算法对比图已保存: {output_path}")
+    
+    # Determine output path
+    if output_dir == 'figures':
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        system_dir = os.path.dirname(current_dir)
+        project_root = os.path.dirname(system_dir)
+        figures_dir = os.path.join(project_root, 'figures')
+        os.makedirs(figures_dir, exist_ok=True)
+        output_path = os.path.join(figures_dir, f'{output_name}.png')
+        output_pdf = os.path.join(figures_dir, f'{output_name}.pdf')
+    else:
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f'{output_name}.png')
+        output_pdf = os.path.join(output_dir, f'{output_name}.pdf')
+    
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.savefig(output_pdf, bbox_inches='tight', facecolor='white')
+    print(f"[SUCCESS] Algorithm comparison saved: {output_path} & {output_pdf}")
     plt.close()
     
     return output_path

@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import os
 import json
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from scipy.stats import dirichlet
@@ -1027,8 +1028,9 @@ def main():
     
     choice = input("\n请输入选项 (1/2/3/4，默认2): ").strip() or "2"
     
-    # 加载原始数据
-    data_path = "dataset/Xinwang/xinwang.csv"
+    # 加载原始数据（使用绝对路径）
+    script_dir = Path(__file__).parent.resolve()
+    data_path = script_dir / "Xinwang" / "xinwang.csv"
     df = pd.read_csv(data_path)
     
     # 处理缺失值

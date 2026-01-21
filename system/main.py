@@ -11,18 +11,20 @@ import numpy as np
 import torchvision
 import logging
 
+# 基线算法导入
 from flcore.servers.serveravg import FedAvg
 from flcore.servers.serverprox import FedProx
 from flcore.servers.serverproto import FedProto
 from flcore.servers.servergpro import FedGpro
+from flcore.servers.servergen import FedGen
+from flcore.servers.servermoon import MOON
+from flcore.servers.serverrep import FedRep
+from flcore.servers.serverscaffold import SCAFFOLD
+from flcore.servers.serverperavg import PerAvg
+from flcore.servers.servergwo import FedGWO
+from flcore.servers.serverpso import FedPSO
 
 from flcore.trainmodel.models import *
-
-from flcore.trainmodel.bilstm import *
-from flcore.trainmodel.resnet import *
-from flcore.trainmodel.alexnet import *
-from flcore.trainmodel.mobilenet_v2 import *
-from flcore.trainmodel.transformer import *
 from flcore.trainmodel.credit import *
 
 from utils.result_utils import average_data
@@ -287,6 +289,42 @@ def run(args):
 
         elif base_algorithm == "FedGpro" or base_algorithm.startswith("FedGpro-"):
             server = FedGpro(args, i)
+
+        elif base_algorithm == "FedGen":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedGen(args, i)
+
+        elif base_algorithm == "FedMoon" or base_algorithm == "MOON":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = MOON(args, i)
+
+        elif base_algorithm == "FedRep":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedRep(args, i)
+
+        elif base_algorithm == "FedScaffold" or base_algorithm == "SCAFFOLD":
+            server = SCAFFOLD(args, i)
+
+        elif base_algorithm == "Per-FedAvg" or base_algorithm == "PerAvg":
+            server = PerAvg(args, i)
+
+        elif base_algorithm == "FedGwo":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedGWO(args, i)
+
+        elif base_algorithm == "FedPso":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedPSO(args, i)
 
         else:
             raise NotImplementedError(f"Algorithm '{base_algorithm}' is not implemented")

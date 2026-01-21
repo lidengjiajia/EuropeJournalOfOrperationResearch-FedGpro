@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import os
 import json
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from scipy.stats import dirichlet
@@ -1012,8 +1013,9 @@ def main():
     
     choice = input("\n请输入选项 (1/2/3/4，默认2): ").strip() or "2"
     
-    # 加载原始数据
-    data_path = "dataset/Uci/uci_credit.xls"
+    # 加载原始数据（使用绝对路径）
+    script_dir = Path(__file__).parent.resolve()
+    data_path = script_dir / "Uci" / "uci_credit.xls"
     df = pd.read_excel(data_path, header=1)  # 跳过第一行（说明行）
     
     # 删除第一列ID

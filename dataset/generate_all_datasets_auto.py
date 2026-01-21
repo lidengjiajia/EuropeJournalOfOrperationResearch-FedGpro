@@ -58,7 +58,9 @@ def run_dataset_generation(dataset_name, choice, dataset_script):
 
 def clear_plot_directory():
     """清空绘图目录"""
-    plot_dir = Path("results/heterogeneity_plots")
+    # 使用项目根目录的绝对路径
+    project_root = Path(__file__).parent.parent.resolve()
+    plot_dir = project_root / "system" / "results" / "汇总" / "heterogeneity_plots"
     if plot_dir.exists():
         shutil.rmtree(plot_dir)
     plot_dir.mkdir(parents=True, exist_ok=True)
@@ -66,7 +68,9 @@ def clear_plot_directory():
 
 def load_client_data(dataset_name, heterogeneity_type):
     """加载客户端数据"""
-    data_dir = Path(f"dataset/{dataset_name}/{heterogeneity_type}")
+    # 使用脚本所在目录作为基准
+    script_dir = Path(__file__).parent.resolve()
+    data_dir = script_dir / dataset_name / heterogeneity_type
     client_data = {}
     
     if not data_dir.exists():
@@ -93,12 +97,44 @@ def load_client_data(dataset_name, heterogeneity_type):
     
     return client_data
 
+def setup_nature_style():
+    """设置 Nature 期刊风格"""
+    plt.rcParams.update({
+        'font.family': 'Arial',
+        'font.size': 12,
+        'axes.linewidth': 1.2,
+        'axes.edgecolor': '#333333',
+        'axes.labelcolor': '#333333',
+        'xtick.color': '#333333',
+        'ytick.color': '#333333',
+        'xtick.major.width': 1.0,
+        'ytick.major.width': 1.0,
+        'xtick.major.size': 5,
+        'ytick.major.size': 5,
+        'legend.frameon': True,
+        'legend.edgecolor': '#CCCCCC',
+        'legend.fancybox': False,
+        'figure.facecolor': 'white',
+        'axes.facecolor': 'white',
+        'axes.grid': False,
+    })
+
+# Nature 风格配色（柔和优雅）
+NATURE_COLORS = {
+    'blue': '#4A90A4',      # 柔和蓝
+    'orange': '#E07B54',    # 柔和橙
+    'green': '#6B9E78',     # 柔和绿
+    'purple': '#8B7CB3',    # 柔和紫
+    'teal': '#5BA3A8',      # 柔和青
+    'red': '#C75B5B',       # 柔和红
+}
+
 def plot_label_heterogeneity():
-    """绘制标签异质性分布图"""
-    # 现代配色方案
-    colors = ['#1f77b4', '#ff7f0e']  # 蓝色和橙色
+    """绘制标签异质性分布图 - Nature 风格"""
+    setup_nature_style()
+    colors = [NATURE_COLORS['blue'], NATURE_COLORS['orange']]
     
-    fig, ax = plt.subplots(figsize=(14, 10))  # 增加高度
+    fig, ax = plt.subplots(figsize=(10, 6))
     
     # 加载UCI数据
     uci_data = load_client_data("Uci", "label")
@@ -130,38 +166,42 @@ def plot_label_heterogeneity():
         x = np.arange(len(clients))
         
         bars1 = ax.bar(x - bar_width/2, uci_pos_ratios, bar_width, 
-                      label='UCI', color=colors[0], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='UCI', color=colors[0], alpha=0.85, edgecolor='white', linewidth=0.8)
         bars2 = ax.bar(x + bar_width/2, xinwang_pos_ratios, bar_width, 
-                      label='Xinwang', color=colors[1], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='Xinwang', color=colors[1], alpha=0.85, edgecolor='white', linewidth=0.8)
         
-        # 添加数值标签 - 调整位置
+        # 添加数值标签 - 简洁风格
         for bar in bars1:
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 0.002,
-                   f'{height:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.003,
+                   f'{height:.3f}', ha='center', va='bottom', fontsize=8, color='#555555')
         
         for bar in bars2:
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + 0.002,
-                   f'{height:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+            ax.text(bar.get_x() + bar.get_width()/2., height + 0.003,
+                   f'{height:.3f}', ha='center', va='bottom', fontsize=8, color='#555555')
         
-        ax.set_xlabel('Client ID', fontsize=16, fontweight='bold')
-        ax.set_ylabel('Positive Sample Ratio', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Client ID', fontsize=12)
+        ax.set_ylabel('Positive Sample Ratio', fontsize=12)
         ax.set_xticks(x)
-        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=14)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='upper left', fontsize=14, frameon=True, fancybox=True, shadow=True)
+        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=10)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(loc='upper left', fontsize=10, framealpha=0.9)
         
         plt.tight_layout()
-        plt.savefig('results/heterogeneity_plots/label_heterogeneity.png', dpi=300, bbox_inches='tight')
+        project_root = Path(__file__).parent.parent.resolve()
+        save_path = project_root / "system" / "results" / "汇总" / "heterogeneity_plots" / "label_heterogeneity.png"
+        plt.savefig(str(save_path), dpi=300, bbox_inches='tight', facecolor='white')
+        plt.savefig(str(save_path).replace('.png', '.pdf'), bbox_inches='tight', facecolor='white')
         plt.close()
 
 def plot_feature_heterogeneity():
-    """绘制特征异质性分布图"""
-    # 现代配色方案
-    colors = ['#1f77b4', '#ff7f0e']  # 蓝色和橙色
+    """绘制特征异质性分布图 - Nature 风格"""
+    setup_nature_style()
+    colors = [NATURE_COLORS['blue'], NATURE_COLORS['orange']]
     
-    fig, ax = plt.subplots(figsize=(14, 10))  # 增加高度
+    fig, ax = plt.subplots(figsize=(10, 6))
     
     # 加载UCI数据
     uci_data = load_client_data("Uci", "feature")
@@ -213,11 +253,11 @@ def plot_feature_heterogeneity():
         x = np.arange(len(clients))
         
         bars1 = ax.bar(x - bar_width/2, uci_wasserstein, bar_width, 
-                      label='UCI', color=colors[0], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='UCI', color=colors[0], alpha=0.85, edgecolor='white', linewidth=0.8)
         bars2 = ax.bar(x + bar_width/2, xinwang_wasserstein, bar_width, 
-                      label='Xinwang', color=colors[1], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='Xinwang', color=colors[1], alpha=0.85, edgecolor='white', linewidth=0.8)
         
-        # 添加数值标签 - 调整位置
+        # 添加数值标签 - 简洁风格
         max_uci = max(uci_wasserstein) if uci_wasserstein else 0
         max_xinwang = max(xinwang_wasserstein) if xinwang_wasserstein else 0
         max_height = max(max_uci, max_xinwang)
@@ -225,30 +265,34 @@ def plot_feature_heterogeneity():
         for bar in bars1:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + max_height * 0.02,
-                   f'{height:.4f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                   f'{height:.4f}', ha='center', va='bottom', fontsize=8, color='#555555')
         
         for bar in bars2:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + max_height * 0.02,
-                   f'{height:.4f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                   f'{height:.4f}', ha='center', va='bottom', fontsize=8, color='#555555')
         
-        ax.set_xlabel('Client ID', fontsize=16, fontweight='bold')
-        ax.set_ylabel('Average Wasserstein Distance', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Client ID', fontsize=12)
+        ax.set_ylabel('Average Wasserstein Distance', fontsize=12)
         ax.set_xticks(x)
-        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=14)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='upper left', fontsize=14, frameon=True, fancybox=True, shadow=True)
+        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=10)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(loc='upper left', fontsize=10, framealpha=0.9)
         
         plt.tight_layout()
-        plt.savefig('results/heterogeneity_plots/feature_heterogeneity.png', dpi=300, bbox_inches='tight')
+        project_root = Path(__file__).parent.parent.resolve()
+        save_path = project_root / "system" / "results" / "汇总" / "heterogeneity_plots" / "feature_heterogeneity.png"
+        plt.savefig(str(save_path), dpi=300, bbox_inches='tight', facecolor='white')
+        plt.savefig(str(save_path).replace('.png', '.pdf'), bbox_inches='tight', facecolor='white')
         plt.close()
 
 def plot_quantity_heterogeneity():
-    """绘制数量异质性分布图"""
-    # 现代配色方案
-    colors = ['#1f77b4', '#ff7f0e']  # 蓝色和橙色
+    """绘制数量异质性分布图 - Nature 风格"""
+    setup_nature_style()
+    colors = [NATURE_COLORS['blue'], NATURE_COLORS['orange']]
     
-    fig, ax = plt.subplots(figsize=(14, 10))  # 增加高度
+    fig, ax = plt.subplots(figsize=(10, 6))
     
     # 加载UCI数据
     uci_data = load_client_data("Uci", "quantity")
@@ -278,11 +322,11 @@ def plot_quantity_heterogeneity():
         x = np.arange(len(clients))
         
         bars1 = ax.bar(x - bar_width/2, uci_sample_counts, bar_width, 
-                      label='UCI', color=colors[0], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='UCI', color=colors[0], alpha=0.85, edgecolor='white', linewidth=0.8)
         bars2 = ax.bar(x + bar_width/2, xinwang_sample_counts, bar_width, 
-                      label='Xinwang', color=colors[1], alpha=0.8, edgecolor='black', linewidth=1)
+                      label='Xinwang', color=colors[1], alpha=0.85, edgecolor='white', linewidth=0.8)
         
-        # 添加数值标签 - 调整位置
+        # 添加数值标签 - 简洁风格
         max_uci = max(uci_sample_counts) if uci_sample_counts else 0
         max_xinwang = max(xinwang_sample_counts) if xinwang_sample_counts else 0
         max_height = max(max_uci, max_xinwang)
@@ -290,22 +334,26 @@ def plot_quantity_heterogeneity():
         for bar in bars1:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + max_height * 0.02,
-                   f'{int(height)}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                   f'{int(height)}', ha='center', va='bottom', fontsize=8, color='#555555')
         
         for bar in bars2:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + max_height * 0.02,
-                   f'{int(height)}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                   f'{int(height)}', ha='center', va='bottom', fontsize=8, color='#555555')
         
-        ax.set_xlabel('Client ID', fontsize=16, fontweight='bold')
-        ax.set_ylabel('Sample Count', fontsize=16, fontweight='bold')
+        ax.set_xlabel('Client ID', fontsize=12)
+        ax.set_ylabel('Sample Count', fontsize=12)
         ax.set_xticks(x)
-        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=14)
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc='upper left', fontsize=14, frameon=True, fancybox=True, shadow=True)
+        ax.set_xticklabels([f'C{i}' for i in clients], fontsize=10)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(loc='upper left', fontsize=10, framealpha=0.9)
         
         plt.tight_layout()
-        plt.savefig('results/heterogeneity_plots/quantity_heterogeneity.png', dpi=300, bbox_inches='tight')
+        project_root = Path(__file__).parent.parent.resolve()
+        save_path = project_root / "system" / "results" / "汇总" / "heterogeneity_plots" / "quantity_heterogeneity.png"
+        plt.savefig(str(save_path), dpi=300, bbox_inches='tight', facecolor='white')
+        plt.savefig(str(save_path).replace('.png', '.pdf'), bbox_inches='tight', facecolor='white')
         plt.close()
 
 def generate_plots():
@@ -324,7 +372,7 @@ def generate_plots():
         plot_quantity_heterogeneity()
         print("✓ 数量异质性分布图生成完成")
         
-        print(f"✓ 所有分布图已保存至: results/heterogeneity_plots/")
+        print(f"✓ 所有分布图已保存至: results/汇总/heterogeneity_plots/")
         
     except Exception as e:
         print(f"✗ 绘图过程中出错: {str(e)}")
@@ -361,18 +409,22 @@ def main():
     # 清空绘图目录
     clear_plot_directory()
     
-    # 确认工作目录
-    script_dir = Path(__file__).parent.parent
+    # 确认工作目录（脚本所在目录）
+    script_dir = Path(__file__).parent.resolve()
     print(f"\n工作目录: {script_dir}")
+    
+    # 切换到脚本所在目录
+    os.chdir(script_dir)
     
     total_start = time.time()
     success_count = 0
     total_count = 8
     
     # 数据集配置：(数据集名称, 脚本路径, 选项列表)
+    # 使用相对于当前目录的路径
     datasets = [
-        ("UCI", "dataset/generate_Uci.py", ["1", "2", "3", "4"]),
-        ("Xinwang", "dataset/generate_Xinwang.py", ["1", "2", "3", "4"])
+        ("UCI", "generate_Uci.py", ["1", "2", "3", "4"]),
+        ("Xinwang", "generate_Xinwang.py", ["1", "2", "3", "4"])
     ]
     
     # 依次生成每个数据集的每种模式
